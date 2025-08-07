@@ -1,0 +1,108 @@
+"use client"
+
+import { Folder, File, Video } from 'lucide-react'
+import Image from 'next/image'
+
+interface FileItem {
+  name: string
+  type: 'file' | 'directory'
+  size?: number
+  modified?: string
+  path: string
+  isVideo?: boolean
+}
+
+interface ListViewProps {
+  files: FileItem[]
+  onFileClick: (file: FileItem) => void
+}
+
+export default function ListView({ files, onFileClick }: ListViewProps) {
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return '-'
+    const sizes = ['B', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(1024))
+    return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`
+  }
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '-'
+    return new Date(dateString).toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  return (
+    <div className="bg-gray-800 rounded-lg overflow-hidden">
+      <table className="w-full">
+        <thead className="bg-gray-700">
+          <tr>
+            <th className="text-left p-3 font-medium">이름</th>
+            <th className="text-left p-3 font-medium w-24">크기</th>
+            <th className="text-left p-3 font-medium w-40">수정일</th>
+          </tr>
+        </thead>
+        <tbody>
+          {files.map((file, index) => (
+            <tr
+              key={file.path}
+              className={`border-t border-gray-700 hover:bg-gray-700 cursor-pointer ${
+                index % 2 === 0 ? 'bg-gray-800' : 'bg-gray-750'
+              }`}
+              onClick={() => onFileClick(file)}
+            >
+              <td className="p-3">
+                <div className="flex items-center gap-3">
+                  {file.type === 'directory' ? (
+                    <Folder className="w-5 h-5 text-yellow-500 flex-shrink-0" />
+                  ) : file.isVideo ? (
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-16 h-12 bg-gray-700 rounded overflow-hidden flex-shrink-0">
+                        <Image
+                          src={`/api/thumbnail?path=${encodeURIComponent(file.path)}`}
+                          alt={`${file.name} 썸네일`}
+                          fill
+                          className="object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement
+                            target.style.display = 'none'
+                            const parent = target.parentElement
+                            if (parent) {
+                              const icon = document.createElement('div')
+                              icon.className = 'w-full h-full flex items-center justify-center'
+                              icon.innerHTML = '<svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"></path></svg>'
+                              parent.appendChild(icon)
+                            }
+                          }}
+                        />
+                      </div>
+                      <Video className="w-5 h-5 text-red-500 flex-shrink-0" />
+                    </div>
+                  ) : (
+                    <File className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                  )}
+                  <span className="truncate">{file.name}</span>
+                </div>
+              </td>
+              <td className="p-3 text-gray-400 text-sm">
+                {file.type === 'directory' ? '-' : formatFileSize(file.size)}
+              </td>
+              <td className="p-3 text-gray-400 text-sm">
+                {formatDate(file.modified)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {files.length === 0 && (
+        <div className="text-center py-8 text-gray-400">
+          폴더가 비어있습니다.
+        </div>
+      )}
+    </div>
+  )
+}
