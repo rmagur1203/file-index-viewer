@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import VideoPlayer from './video-player'
+import ImageViewer from './image-viewer'
 import { Toggle } from '@/components/ui/toggle'
 import ListView from './list-view'
 import GalleryView from './gallery-view'
@@ -17,6 +18,7 @@ interface FileItem {
   modified?: string
   path: string
   isVideo?: boolean
+  isImage?: boolean
 }
 
 interface FolderTree {
@@ -30,6 +32,7 @@ export default function FileBrowser() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null)
+  const [selectedImage, setSelectedImage] = useState<{ path: string; name: string } | null>(null)
   const [folderTree, setFolderTree] = useState<FolderTree>({})
   const [viewMode, setViewMode] = useState<'list' | 'gallery'>('list')
 
@@ -66,6 +69,8 @@ export default function FileBrowser() {
       setCurrentPath(file.path)
     } else if (file.isVideo) {
       setSelectedVideo(file.path)
+    } else if (file.isImage) {
+      setSelectedImage({ path: file.path, name: file.name })
     }
   }
 
@@ -244,6 +249,24 @@ export default function FileBrowser() {
           <VideoPlayer
             src={`/api/video${selectedVideo}`}
             onClose={() => setSelectedVideo(null)}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
+
+    {/* Image Viewer Modal */}
+    <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+      <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full bg-gray-900 border-gray-700 p-0">
+        <DialogHeader className="sr-only">
+          <DialogTitle className="text-white">
+            {selectedImage?.name}
+          </DialogTitle>
+        </DialogHeader>
+        {selectedImage && (
+          <ImageViewer
+            src={`/api/video${selectedImage.path}`}
+            alt={selectedImage.name}
+            onClose={() => setSelectedImage(null)}
           />
         )}
       </DialogContent>

@@ -6,6 +6,7 @@ import path from 'path'
 const VIDEO_ROOT = process.env.VIDEO_ROOT || '/path/to/your/videos'
 
 const videoExtensions = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v', '.flv', '.wmv']
+const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.tiff', '.ico']
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,6 +40,9 @@ export async function GET(request: NextRequest) {
           const isVideo = item.isFile() && videoExtensions.some(ext => 
             item.name.toLowerCase().endsWith(ext)
           )
+          const isImage = item.isFile() && imageExtensions.some(ext => 
+            item.name.toLowerCase().endsWith(ext)
+          )
           
           return {
             name: item.name,
@@ -46,7 +50,8 @@ export async function GET(request: NextRequest) {
             size: item.isFile() ? itemStats.size : undefined,
             modified: itemStats.mtime.toISOString(),
             path: relativePath.startsWith('/') ? relativePath : '/' + relativePath,
-            isVideo
+            isVideo,
+            isImage
           }
         } catch (error) {
           console.error(`Error getting stats for ${itemPath}:`, error)

@@ -1,6 +1,6 @@
 "use client"
 
-import { Folder, Play } from 'lucide-react'
+import { Folder, Play, ImageIcon } from 'lucide-react'
 import Image from 'next/image'
 
 interface FileItem {
@@ -10,6 +10,7 @@ interface FileItem {
   modified?: string
   path: string
   isVideo?: boolean
+  isImage?: boolean
 }
 
 interface GalleryViewProps {
@@ -59,6 +60,33 @@ export default function GalleryView({ files, onFileClick }: GalleryViewProps) {
                 />
                 <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <Play className="w-8 h-8 text-white" />
+                </div>
+                <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                  {formatFileSize(file.size)}
+                </div>
+              </>
+            ) : file.isImage ? (
+              <>
+                <Image
+                  src={`/api/video${file.path}`}
+                  alt={file.name}
+                  fill
+                  className="object-cover"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement
+                    target.style.display = 'none'
+                    const parent = target.parentElement
+                    if (parent) {
+                      const fallback = document.createElement('div')
+                      fallback.className = 'w-full h-full flex items-center justify-center bg-gray-600'
+                      fallback.innerHTML = '<svg class="w-8 h-8 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path></svg>'
+                      parent.appendChild(fallback)
+                    }
+                  }}
+                  unoptimized
+                />
+                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <ImageIcon className="w-8 h-8 text-white" />
                 </div>
                 <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
                   {formatFileSize(file.size)}

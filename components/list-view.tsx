@@ -1,6 +1,6 @@
 "use client"
 
-import { Folder, File, Video } from 'lucide-react'
+import { Folder, File, Video, ImageIcon } from 'lucide-react'
 import Image from 'next/image'
 
 interface FileItem {
@@ -10,6 +10,7 @@ interface FileItem {
   modified?: string
   path: string
   isVideo?: boolean
+  isImage?: boolean
 }
 
 interface ListViewProps {
@@ -81,6 +82,30 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
                         />
                       </div>
                       <Video className="w-5 h-5 text-red-500 flex-shrink-0" />
+                    </div>
+                  ) : file.isImage ? (
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-16 h-12 bg-gray-700 rounded overflow-hidden flex-shrink-0">
+                        <Image
+                          src={`/api/video${file.path}`}
+                          alt={`${file.name} 미리보기`}
+                          fill
+                          className="object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement
+                            target.style.display = 'none'
+                            const parent = target.parentElement
+                            if (parent) {
+                              const icon = document.createElement('div')
+                              icon.className = 'w-full h-full flex items-center justify-center'
+                              icon.innerHTML = '<svg class="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path></svg>'
+                              parent.appendChild(icon)
+                            }
+                          }}
+                          unoptimized
+                        />
+                      </div>
+                      <ImageIcon className="w-5 h-5 text-blue-500 flex-shrink-0" />
                     </div>
                   ) : (
                     <File className="w-5 h-5 text-gray-400 flex-shrink-0" />
