@@ -10,7 +10,7 @@ interface VideoPlayerProps {
   onClose: () => void
 }
 
-export default function VideoPlayer({ src, onClose }: VideoPlayerProps) {
+export default function VideoPlayer({ src }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)

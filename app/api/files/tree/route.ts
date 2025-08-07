@@ -4,12 +4,16 @@ import path from 'path'
 
 const VIDEO_ROOT = process.env.VIDEO_ROOT || '/path/to/your/videos'
 
-async function buildFolderTree(dirPath: string, maxDepth = 3, currentDepth = 0): Promise<any> {
+interface FolderTree {
+  [key: string]: FolderTree
+}
+
+async function buildFolderTree(dirPath: string, maxDepth = 3, currentDepth = 0): Promise<FolderTree> {
   if (currentDepth >= maxDepth) return {}
   
   try {
     const items = await fs.readdir(dirPath, { withFileTypes: true })
-    const tree: any = {}
+    const tree: FolderTree = {}
     
     for (const item of items) {
       if (item.isDirectory()) {

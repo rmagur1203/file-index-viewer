@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Search, Folder, File, Video, ChevronRight, Home, ArrowLeft, Grid, List, Eye } from 'lucide-react'
+import { Search, Folder, ChevronRight, Home, ArrowLeft, Grid, List } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -19,119 +19,10 @@ interface FileItem {
   isVideo?: boolean
 }
 
-interface ListViewProps {
-  files: FileItem[]
-  onFileClick: (file: FileItem) => void
+interface FolderTree {
+  [key: string]: FolderTree
 }
 
-const ListViewOriginal: React.FC<ListViewProps> = ({ files, onFileClick }) => {
-  const formatFileSize = (bytes?: number) => {
-    if (!bytes) return '-'
-    const sizes = ['B', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(1024))
-    return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`
-  }
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return '-'
-    return new Date(dateString).toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
-
-  return (
-    <div className="bg-gray-800 rounded-lg overflow-hidden">
-      <table className="w-full">
-        <thead className="bg-gray-700">
-          <tr>
-            <th className="text-left p-3 font-medium">이름</th>
-            <th className="text-left p-3 font-medium w-24">크기</th>
-            <th className="text-left p-3 font-medium w-40">수정일</th>
-          </tr>
-        </thead>
-        <tbody>
-          {files.map((file, index) => (
-            <tr
-              key={file.path}
-              className={`border-t border-gray-700 hover:bg-gray-700 cursor-pointer ${
-                index % 2 === 0 ? 'bg-gray-800' : 'bg-gray-750'
-              }`}
-              onClick={() => onFileClick(file)}
-            >
-              <td className="p-3">
-                <div className="flex items-center gap-3">
-                  {file.type === 'directory' ? (
-                    <Folder className="w-5 h-5 text-yellow-500" />
-                  ) : file.isVideo ? (
-                    <Video className="w-5 h-5 text-red-500" />
-                  ) : (
-                    <File className="w-5 h-5 text-gray-400" />
-                  )}
-                  <span className="truncate">{file.name}</span>
-                </div>
-              </td>
-              <td className="p-3 text-gray-400 text-sm">
-                {file.type === 'directory' ? '-' : formatFileSize(file.size)}
-              </td>
-              <td className="p-3 text-gray-400 text-sm">
-                {formatDate(file.modified)}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {files.length === 0 && (
-        <div className="text-center py-8 text-gray-400">
-          검색 결과가 없습니다.
-        </div>
-      )}
-    </div>
-  )
-}
-
-interface GalleryViewProps {
-  files: FileItem[]
-  onFileClick: (file: FileItem) => void
-}
-
-const GalleryViewOriginal: React.FC<GalleryViewProps> = ({ files, onFileClick }) => {
-  return (
-    <div className="grid grid-cols-4 gap-4 p-4">
-      {files.map(file => (
-        <div
-          key={file.path}
-          className="bg-gray-800 rounded-lg p-4 hover:bg-gray-700 cursor-pointer"
-          onClick={() => onFileClick(file)}
-        >
-          {file.isVideo ? (
-            <div className="relative">
-              <Video className="absolute top-2 left-2 w-6 h-6 text-red-500" />
-              <img
-                src={`/api/thumbnail?path=${encodeURIComponent(file.path)}`}
-                alt={file.name}
-                className="w-full h-32 object-cover rounded-md"
-              />
-            </div>
-          ) : file.type === 'directory' ? (
-            <Folder className="w-12 h-12 text-yellow-500 mx-auto" />
-          ) : (
-            <File className="w-12 h-12 text-gray-400 mx-auto" />
-          )}
-          <div className="text-center mt-2 truncate">{file.name}</div>
-        </div>
-      ))}
-      {files.length === 0 && (
-        <div className="text-center py-8 text-gray-400 col-span-4">
-          검색 결과가 없습니다.
-        </div>
-      )}
-    </div>
-  )
-}
 
 export default function FileBrowser() {
   const [currentPath, setCurrentPath] = useState('/')
@@ -139,10 +30,8 @@ export default function FileBrowser() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null)
-  const [folderTree, setFolderTree] = useState<any>({})
+  const [folderTree, setFolderTree] = useState<FolderTree>({})
   const [viewMode, setViewMode] = useState<'list' | 'gallery'>('list')
-
-  const videoExtensions = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v']
 
   useEffect(() => {
     fetchFiles(currentPath)
@@ -195,7 +84,7 @@ export default function FileBrowser() {
 
   const pathSegments = currentPath.split('/').filter(Boolean)
 
-  const renderFolderTree = (tree: any, basePath = '') => {
+  const renderFolderTree = (tree: FolderTree, basePath = '') => {
     return Object.entries(tree).map(([name, subtree]) => {
       const fullPath = basePath + '/' + name
       const isCurrentPath = fullPath === currentPath
@@ -211,7 +100,7 @@ export default function FileBrowser() {
             <Folder className="w-4 h-4 text-yellow-500" />
             <span className="truncate">{name}</span>
           </button>
-          {typeof subtree === 'object' && Object.keys(subtree).length > 0 && (
+          {typeof subtree === 'object' && subtree !== null && Object.keys(subtree).length > 0 && (
             <div className="ml-2">
               {renderFolderTree(subtree, fullPath)}
             </div>

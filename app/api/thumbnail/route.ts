@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
       await fs.access(thumbnailPath)
       // 썸네일이 존재하면 해당 파일을 반환
       const thumbnailBuffer = await fs.readFile(thumbnailPath)
-      return new NextResponse(thumbnailBuffer, {
+      return new NextResponse(new Uint8Array(thumbnailBuffer), {
         headers: {
           'Content-Type': 'image/jpeg',
           'Cache-Control': 'public, max-age=31536000', // 1년 캐시
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
       try {
         await generateThumbnail(fullVideoPath, thumbnailPath)
         const thumbnailBuffer = await fs.readFile(thumbnailPath)
-        return new NextResponse(thumbnailBuffer, {
+        return new NextResponse(new Uint8Array(thumbnailBuffer), {
           headers: {
             'Content-Type': 'image/jpeg',
             'Cache-Control': 'public, max-age=31536000',
@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
         
         // FFmpeg 실패 시 기본 이미지 반환
         const defaultThumbnail = await generateDefaultThumbnail()
-        return new NextResponse(defaultThumbnail, {
+        return new NextResponse(new Uint8Array(defaultThumbnail), {
           headers: {
             'Content-Type': 'image/svg+xml',
             'Cache-Control': 'public, max-age=3600',

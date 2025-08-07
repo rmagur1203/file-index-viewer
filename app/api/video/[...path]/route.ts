@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { promises as fs } from 'fs'
 import { createReadStream } from 'fs'
+import { Readable } from 'stream'
 import path from 'path'
 
 const VIDEO_ROOT = process.env.VIDEO_ROOT || '/path/to/your/videos'
@@ -37,7 +38,7 @@ export async function GET(
       
       const stream = createReadStream(fullPath, { start, end })
       
-      return new NextResponse(stream as any, {
+      return new NextResponse(Readable.toWeb(stream) as ReadableStream, {
         status: 206,
         headers: {
           'Content-Range': `bytes ${start}-${end}/${fileSize}`,
@@ -50,7 +51,7 @@ export async function GET(
       // 전체 파일 전송
       const stream = createReadStream(fullPath)
       
-      return new NextResponse(stream as any, {
+      return new NextResponse(Readable.toWeb(stream) as ReadableStream, {
         headers: {
           'Content-Length': fileSize.toString(),
           'Content-Type': 'video/mp4',
