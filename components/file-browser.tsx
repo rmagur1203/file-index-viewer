@@ -44,10 +44,14 @@ interface FileItem {
   size?: number
   modified?: string
   path: string
-  isVideo?: boolean
-  isImage?: boolean
-  isPdf?: boolean
+  mediaType?: 'video' | 'image' | 'pdf' | 'file'
   accessDenied?: boolean
+}
+
+interface SelectedMedia {
+  path: string
+  name: string
+  type: 'video' | 'image' | 'pdf'
 }
 
 interface FolderTree {
@@ -59,15 +63,7 @@ export default function FileBrowser() {
   const [files, setFiles] = useState<FileItem[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedVideo, setSelectedVideo] = useState<string | null>(null)
-  const [selectedImage, setSelectedImage] = useState<{
-    path: string
-    name: string
-  } | null>(null)
-  const [selectedPdf, setSelectedPdf] = useState<{
-    path: string
-    name: string
-  } | null>(null)
+  const [selectedMedia, setSelectedMedia] = useState<SelectedMedia | null>(null)
   const [renderPdfViewer, setRenderPdfViewer] = useState(false)
   const [folderTree, setFolderTree] = useState<FolderTree>({})
   const [viewMode, setViewMode] = useState<'list' | 'gallery'>('list')
@@ -79,7 +75,7 @@ export default function FileBrowser() {
 
   // 웹 검색 결과: 모달 열린 후 PDF 뷰어 렌더링 지연
   useEffect(() => {
-    if (selectedPdf) {
+    if (selectedMedia?.type === 'pdf') {
       setRenderPdfViewer(false) // 먼저 리셋
       const timer = setTimeout(() => {
         setRenderPdfViewer(true)
@@ -89,7 +85,7 @@ export default function FileBrowser() {
     } else {
       setRenderPdfViewer(false)
     }
-  }, [selectedPdf])
+  }, [selectedMedia])
 
   const fetchFiles = async (path: string) => {
     setLoading(true)
@@ -119,12 +115,17 @@ export default function FileBrowser() {
   const handleFileClick = (file: FileItem) => {
     if (file.type === 'directory') {
       setCurrentPath(file.path)
-    } else if (file.isVideo) {
-      setSelectedVideo(file.path)
-    } else if (file.isImage) {
-      setSelectedImage({ path: file.path, name: file.name })
-    } else if (file.isPdf) {
-      setSelectedPdf({ path: file.path, name: file.name })
+    } else if (
+      file.mediaType &&
+      (file.mediaType === 'video' ||
+        file.mediaType === 'image' ||
+        file.mediaType === 'pdf')
+    ) {
+      setSelectedMedia({
+        path: file.path,
+        name: file.name,
+        type: file.mediaType,
+      })
     }
   }
 
@@ -297,60 +298,44 @@ export default function FileBrowser() {
         </div>
       </div>
 
-      {/* Video Player Modal */}
+      {/* Media Viewer Modals */}
       <Dialog
-        open={!!selectedVideo}
-        onOpenChange={() => setSelectedVideo(null)}
+        open={!!selectedMedia}
+        onOpenChange={() => setSelectedMedia(null)}
       >
-        <DialogContent className="max-w-4xl w-full bg-gray-900 border-gray-700">
+        <DialogContent
+          className={
+            selectedMedia?.type === 'video'
+              ? 'max-w-4xl w-full bg-gray-900 border-gray-700'
+              : 'max-w-[95vw] max-h-[95vh] w-full h-full bg-gray-900 border-gray-700 p-0'
+          }
+        >
           <DialogHeader>
             <DialogTitle className="text-white">
-              {selectedVideo?.split('/').pop()}
+              {selectedMedia?.name}
             </DialogTitle>
           </DialogHeader>
-          {selectedVideo && (
+          {selectedMedia?.type === 'video' && (
             <VideoPlayer
-              src={`/api/video${selectedVideo}`}
-              onClose={() => setSelectedVideo(null)}
+              src={`/api/media${selectedMedia.path}`}
+              onClose={() => setSelectedMedia(null)}
             />
           )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Image Viewer Modal */}
-      <Dialog
-        open={!!selectedImage}
-        onOpenChange={() => setSelectedImage(null)}
-      >
-        <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full bg-gray-900 border-gray-700 p-0">
-          <DialogHeader className="sr-only">
-            <DialogTitle className="text-white">
-              {selectedImage?.name}
-            </DialogTitle>
-          </DialogHeader>
-          {selectedImage && (
+          {selectedMedia?.type === 'image' && (
             <ImageViewer
-              src={`/api/video${selectedImage.path}`}
-              alt={selectedImage.name}
-              onClose={() => setSelectedImage(null)}
+              src={`/api/media${selectedMedia.path}`}
+              alt={selectedMedia.name}
+              onClose={() => setSelectedMedia(null)}
             />
           )}
-        </DialogContent>
-      </Dialog>
-
-      {/* PDF Viewer Modal */}
-      <Dialog open={!!selectedPdf} onOpenChange={() => setSelectedPdf(null)}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full bg-gray-900 border-gray-700 p-0 [&>button]:hidden">
-          <DialogHeader className="sr-only">
-            <DialogTitle>{selectedPdf?.name}</DialogTitle>
-          </DialogHeader>
-          {selectedPdf && renderPdfViewer ? (
+          {selectedMedia?.type === 'pdf' && renderPdfViewer && (
             <PdfJsViewer
-              src={`/api/video${selectedPdf.path}`}
-              fileName={selectedPdf.name}
-              onClose={() => setSelectedPdf(null)}
+              src={`/api/media${selectedMedia.path}`}
+              fileName={selectedMedia.name}
+              onClose={() => setSelectedMedia(null)}
             />
-          ) : selectedPdf ? (
+          )}
+          {selectedMedia?.type === 'pdf' && !renderPdfViewer && (
             <div className="flex items-center justify-center h-full text-gray-400">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
@@ -358,7 +343,7 @@ export default function FileBrowser() {
                 <div className="text-sm text-gray-500">DOM 초기화 대기</div>
               </div>
             </div>
-          ) : null}
+          )}
         </DialogContent>
       </Dialog>
     </div>

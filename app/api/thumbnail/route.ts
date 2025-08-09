@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { promises as fs } from 'fs'
 import { spawn } from 'child_process'
 import path from 'path'
-
-const VIDEO_ROOT = process.env.VIDEO_ROOT || '/path/to/your/videos'
-const THUMBNAIL_DIR = path.join(process.cwd(), 'public', 'thumbnails')
+import { VIDEO_ROOT, THUMBNAIL_DIR } from '@/lib/config'
+import { safePath, sudoExists } from '@/lib/sudo-fs'
 
 // 썸네일 디렉토리가 없으면 생성
 async function ensureThumbnailDir() {
@@ -38,13 +37,34 @@ function generateThumbnail(
       if (code === 0) {
         resolve()
       } else {
-        reject(new Error(`FFmpeg exited with code ${code}`))
+        // FFmpeg 프로세스 자체의 오류 로그를 더 자세히 보기 위해 stderr를 캡처할 수 있습니다.
+        let stderr = ''
+        ffmpeg.stderr.on('data', (data) => (stderr += data.toString()))
+        ffmpeg.stderr.on('end', () => {
+          reject(
+            new Error(`FFmpeg exited with code ${code}. Stderr: ${stderr}`)
+          )
+        })
       }
     })
 
     ffmpeg.on('error', (error) => {
       reject(error)
     })
+  })
+}
+
+// 썸네일 응답 생성
+function createThumbnailResponse(
+  buffer: Buffer,
+  contentType: 'image/jpeg' | 'image/svg+xml',
+  maxAge: number
+): NextResponse {
+  return new NextResponse(new Uint8Array(buffer), {
+    headers: {
+      'Content-Type': contentType,
+      'Cache-Control': `public, max-age=${maxAge}`,
+    },
   })
 }
 
@@ -60,19 +80,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 보안: 상위 디렉토리 접근 방지
-    const safePath = path.normalize(requestedPath).replace(/^(\.\.[\/\\])+/, '')
-    const fullVideoPath = path.join(VIDEO_ROOT, safePath)
+    const fullVideoPath = safePath(VIDEO_ROOT, requestedPath)
 
-    // 경로가 VIDEO_ROOT 내부에 있는지 확인
-    if (!fullVideoPath.startsWith(VIDEO_ROOT)) {
-      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-    }
-
-    // 비디오 파일이 존재하는지 확인
-    try {
-      await fs.access(fullVideoPath)
-    } catch {
+    // 비디오 파일이 존재하는지 확인 (sudo 권한 포함)
+    if (!(await sudoExists(fullVideoPath))) {
       return NextResponse.json(
         { error: 'Video file not found' },
         { status: 404 }
@@ -82,7 +93,7 @@ export async function GET(request: NextRequest) {
     await ensureThumbnailDir()
 
     // 썸네일 파일명 생성 (경로를 안전한 파일명으로 변환)
-    const thumbnailFileName = safePath
+    const thumbnailFileName = requestedPath
       .replace(/[\/\\]/g, '_')
       .replace(/\.[^.]+$/, '.jpg')
     const thumbnailPath = path.join(THUMBNAIL_DIR, thumbnailFileName)
@@ -90,39 +101,28 @@ export async function GET(request: NextRequest) {
     // 썸네일이 이미 존재하는지 확인
     try {
       await fs.access(thumbnailPath)
-      // 썸네일이 존재하면 해당 파일을 반환
       const thumbnailBuffer = await fs.readFile(thumbnailPath)
-      return new NextResponse(new Uint8Array(thumbnailBuffer), {
-        headers: {
-          'Content-Type': 'image/jpeg',
-          'Cache-Control': 'public, max-age=31536000', // 1년 캐시
-        },
-      })
+      return createThumbnailResponse(thumbnailBuffer, 'image/jpeg', 31536000) // 1년 캐시
     } catch {
       // 썸네일이 없으면 생성
       try {
         await generateThumbnail(fullVideoPath, thumbnailPath)
         const thumbnailBuffer = await fs.readFile(thumbnailPath)
-        return new NextResponse(new Uint8Array(thumbnailBuffer), {
-          headers: {
-            'Content-Type': 'image/jpeg',
-            'Cache-Control': 'public, max-age=31536000',
-          },
-        })
+        return createThumbnailResponse(thumbnailBuffer, 'image/jpeg', 31536000)
       } catch (error) {
         console.error('Error generating thumbnail:', error)
 
         // FFmpeg 실패 시 기본 이미지 반환
         const defaultThumbnail = await generateDefaultThumbnail()
-        return new NextResponse(new Uint8Array(defaultThumbnail), {
-          headers: {
-            'Content-Type': 'image/svg+xml',
-            'Cache-Control': 'public, max-age=3600',
-          },
-        })
+        return createThumbnailResponse(defaultThumbnail, 'image/svg+xml', 3600)
       }
     }
-  } catch (error) {
+  } catch (error: any) {
+    // safePath에서 발생한 오류 처리
+    if (error.message.startsWith('Access denied')) {
+      return NextResponse.json({ error: error.message }, { status: 403 })
+    }
+
     console.error('Thumbnail API error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

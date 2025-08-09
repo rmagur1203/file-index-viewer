@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import path from 'path'
 import { sudoReaddir } from '@/lib/sudo-fs'
-
-const VIDEO_ROOT = process.env.VIDEO_ROOT || '/path/to/your/videos'
+import { VIDEO_ROOT } from '@/lib/config'
 
 interface FolderTree {
   [key: string]: FolderTree

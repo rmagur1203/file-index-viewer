@@ -1,32 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import path from 'path'
 import { sudoStat, sudoReaddir, safePath } from '@/lib/sudo-fs'
-
-// 비디오 서버의 루트 디렉토리 경로를 설정하세요
-const VIDEO_ROOT = process.env.VIDEO_ROOT || '/path/to/your/videos'
-
-const videoExtensions = [
-  '.mp4',
-  '.mov',
-  '.avi',
-  '.mkv',
-  '.webm',
-  '.m4v',
-  '.flv',
-  '.wmv',
-]
-const imageExtensions = [
-  '.jpg',
-  '.jpeg',
-  '.png',
-  '.gif',
-  '.webp',
-  '.bmp',
-  '.svg',
-  '.tiff',
-  '.ico',
-]
-const pdfExtensions = ['.pdf']
+import { VIDEO_ROOT } from '@/lib/config'
+import { getMediaType } from '@/lib/utils'
 
 export async function GET(request: NextRequest) {
   try {
@@ -53,15 +29,6 @@ export async function GET(request: NextRequest) {
 
         try {
           const itemStats = await sudoStat(itemPath)
-          const isVideo =
-            item.isFile() &&
-            videoExtensions.some((ext) => item.name.toLowerCase().endsWith(ext))
-          const isImage =
-            item.isFile() &&
-            imageExtensions.some((ext) => item.name.toLowerCase().endsWith(ext))
-          const isPdf =
-            item.isFile() &&
-            pdfExtensions.some((ext) => item.name.toLowerCase().endsWith(ext))
 
           return {
             name: item.name,
@@ -71,9 +38,7 @@ export async function GET(request: NextRequest) {
             path: relativePath.startsWith('/')
               ? relativePath
               : '/' + relativePath,
-            isVideo,
-            isImage,
-            isPdf,
+            mediaType: item.isFile() ? getMediaType(item.name) : undefined,
           }
         } catch (error) {
           console.error(`Error getting stats for ${itemPath}:`, error)
@@ -86,9 +51,7 @@ export async function GET(request: NextRequest) {
             path: relativePath.startsWith('/')
               ? relativePath
               : '/' + relativePath,
-            isVideo: false,
-            isImage: false,
-            isPdf: false,
+            mediaType: undefined,
             accessDenied: true,
           }
         }
