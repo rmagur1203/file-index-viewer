@@ -4,6 +4,7 @@ import { Search, List, Grid, ArrowLeft } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Toggle } from '@/components/ui/toggle'
+import { ThemeToggle } from './theme-toggle'
 
 type ViewMode = 'list' | 'gallery'
 
@@ -32,7 +33,7 @@ export function BrowserHeader({
           size="sm"
           onClick={onNavigateParent}
           disabled={isRoot}
-          className="text-gray-300 hover:text-white"
+          className="text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
           상위 폴더
@@ -42,22 +43,22 @@ export function BrowserHeader({
       <div className="flex items-center gap-4 flex-1 max-w-2xl">
         <div className="flex-1 max-w-md">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               placeholder="파일 검색..."
               value={searchTerm}
               onChange={(e) => onSearchTermChange(e.target.value)}
-              className="pl-10 bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+              className="pl-10 bg-secondary border-border text-foreground placeholder-muted-foreground"
             />
           </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-gray-700 rounded-lg p-1">
+        <div className="flex items-center gap-2 bg-secondary rounded-lg p-1">
           <Toggle
             pressed={viewMode === 'list'}
             onPressedChange={() => onViewModeChange('list')}
             aria-label="리스트 뷰"
-            className="data-[state=on]:bg-blue-600 data-[state=on]:text-white"
+            className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
             size="sm"
           >
             <List className="w-4 h-4" />
@@ -66,12 +67,14 @@ export function BrowserHeader({
             pressed={viewMode === 'gallery'}
             onPressedChange={() => onViewModeChange('gallery')}
             aria-label="갤러리 뷰"
-            className="data-[state=on]:bg-blue-600 data-[state=on]:text-white"
+            className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
             size="sm"
           >
             <Grid className="w-4 h-4" />
           </Toggle>
         </div>
+
+        <ThemeToggle />
       </div>
     </div>
   )

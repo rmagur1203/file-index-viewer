@@ -33,9 +33,9 @@ import { Breadcrumb } from './breadcrumb'
 const PdfJsViewer = dynamic(() => import('./pdfjs-viewer'), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center h-64 text-gray-400">
+    <div className="flex items-center justify-center h-64 text-muted-foreground">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground mx-auto mb-4"></div>
         <div>PDF 뷰어 컴포넌트 로딩 중...</div>
       </div>
     </div>
@@ -45,9 +45,9 @@ const PdfJsViewer = dynamic(() => import('./pdfjs-viewer'), {
 const TextViewer = dynamic(() => import('./text-viewer'), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center h-64 text-gray-400">
+    <div className="flex items-center justify-center h-64 text-muted-foreground">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground mx-auto mb-4"></div>
         <div>텍스트 뷰어 컴포넌트 로딩 중...</div>
       </div>
     </div>
@@ -111,7 +111,7 @@ export default function FileBrowser() {
   const pathSegments = currentPath.split('/').filter(Boolean)
 
   return (
-    <div className="flex h-screen bg-gray-900 text-white">
+    <div className="flex h-screen bg-background text-foreground">
       <FolderTreeComponent
         tree={folderTree}
         currentPath={currentPath}
@@ -121,7 +121,7 @@ export default function FileBrowser() {
       {/* Right Content Area */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="bg-gray-800 border-b border-gray-700 p-4">
+        <div className="bg-card border-b border-border p-4">
           <BrowserHeader
             searchTerm={searchTerm}
             onSearchTermChange={setSearchTerm}
@@ -138,7 +138,7 @@ export default function FileBrowser() {
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="text-gray-400">로딩 중...</div>
+              <div className="text-muted-foreground">로딩 중...</div>
             </div>
           ) : (
             <div className={viewMode === 'list' ? 'p-4' : ''}>
@@ -163,16 +163,16 @@ export default function FileBrowser() {
         <DialogContent
           className={
             selectedMedia?.type === 'video'
-              ? 'max-w-4xl w-full bg-gray-900 border-gray-700'
+              ? 'max-w-4xl w-full bg-background border-border'
               : selectedMedia?.type === 'text'
-                ? 'max-w-4xl w-full h-[80vh] bg-gray-900 border-gray-700 flex flex-col'
-                : 'max-w-[95vw] max-h-[95vh] w-full h-full bg-gray-900 border-gray-700 p-0 [&>button]:hidden'
+                ? 'max-w-4xl w-full h-[80vh] bg-background border-border flex flex-col'
+                : 'max-w-[95vw] max-h-[95vh] w-full h-full bg-background border-border p-0 [&>button]:hidden'
           }
         >
           {selectedMedia?.type === 'video' && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-white truncate pr-10">
+                <DialogTitle className="text-foreground truncate pr-10">
                   {selectedMedia?.name}
                 </DialogTitle>
               </DialogHeader>
@@ -199,7 +199,7 @@ export default function FileBrowser() {
           {selectedMedia?.type === 'text' && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-white truncate pr-10">
+                <DialogTitle className="text-foreground truncate pr-10">
                   {selectedMedia?.name}
                 </DialogTitle>
               </DialogHeader>
@@ -209,11 +209,13 @@ export default function FileBrowser() {
             </>
           )}
           {selectedMedia?.type === 'pdf' && !renderPdfViewer && (
-            <div className="flex items-center justify-center h-full text-gray-400">
+            <div className="flex items-center justify-center h-full text-muted-foreground">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
                 <div className="text-lg">모달 준비 중...</div>
-                <div className="text-sm text-gray-500">DOM 초기화 대기</div>
+                <div className="text-sm text-muted-foreground/70">
+                  DOM 초기화 대기
+                </div>
               </div>
             </div>
           )}

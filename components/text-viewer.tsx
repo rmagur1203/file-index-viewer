@@ -47,8 +47,8 @@ const TextViewer: React.FC<TextViewerProps> = ({ src }) => {
         whiteSpace: 'pre-wrap',
         wordWrap: 'break-word',
         padding: '1rem',
-        color: 'white',
       }}
+      className="text-foreground"
     >
       {content}
     </pre>

@@ -23,8 +23,8 @@ const renderTree = (
       <div key={fullPath} className="ml-4">
         <button
           onClick={() => onNavigate(fullPath)}
-          className={`flex items-center gap-2 p-1 rounded hover:bg-gray-700 text-sm w-full text-left ${
-            isCurrentPath ? 'bg-gray-700 text-blue-400' : ''
+          className={`flex items-center gap-2 p-1 rounded hover:bg-muted text-sm w-full text-left ${
+            isCurrentPath ? 'bg-muted text-primary' : ''
           }`}
         >
           <Folder className="w-4 h-4 text-yellow-500" />
@@ -44,8 +44,8 @@ const renderTree = (
 
 export function FolderTree({ tree, currentPath, onNavigate }: FolderTreeProps) {
   return (
-    <div className="w-1/4 min-w-[250px] bg-gray-800 border-r border-gray-700 overflow-y-auto hidden md:block">
-      <div className="p-4 border-b border-gray-700">
+    <div className="w-1/4 min-w-[250px] bg-card border-r border-border overflow-y-auto hidden md:block">
+      <div className="p-4 border-b border-border">
         <h2 className="text-lg font-semibold flex items-center gap-2">
           <Folder className="w-5 h-5 text-yellow-500" />
           폴더 구조
@@ -54,8 +54,8 @@ export function FolderTree({ tree, currentPath, onNavigate }: FolderTreeProps) {
       <div className="p-2">
         <button
           onClick={() => onNavigate('/')}
-          className={`flex items-center gap-2 p-2 rounded hover:bg-gray-700 text-sm w-full text-left ${
-            currentPath === '/' ? 'bg-gray-700 text-blue-400' : ''
+          className={`flex items-center gap-2 p-2 rounded hover:bg-muted text-sm w-full text-left ${
+            currentPath === '/' ? 'bg-muted text-primary' : ''
           }`}
         >
           <Home className="w-4 h-4" />

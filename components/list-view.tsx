@@ -23,7 +23,7 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
       case 'pdf':
         return <FileText className="w-5 h-5 text-orange-500 flex-shrink-0" />
       default:
-        return <File className="w-5 h-5 text-gray-400 flex-shrink-0" />
+        return <File className="w-5 h-5 text-muted-foreground flex-shrink-0" />
     }
   }
 
@@ -58,7 +58,7 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
         ? `/api/thumbnail?path=${encodeURIComponent(file.path)}`
         : `/api/media${file.path}`
       return (
-        <div className="relative w-16 h-12 bg-gray-700 rounded overflow-hidden flex-shrink-0">
+        <div className="relative w-16 h-12 bg-muted rounded overflow-hidden flex-shrink-0">
           <Image
             src={thumbnailUrl}
             alt={`${file.name} preview`}
@@ -86,13 +86,13 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
     if (file.mediaType === 'pdf') {
       return <FileText className="w-5 h-5 text-orange-500 flex-shrink-0" />
     }
-    return <File className="w-5 h-5 text-gray-400 flex-shrink-0" />
+    return <File className="w-5 h-5 text-muted-foreground flex-shrink-0" />
   }
 
   return (
-    <div className="bg-gray-800 rounded-lg overflow-hidden">
+    <div className="bg-card rounded-lg overflow-hidden">
       <table className="w-full">
-        <thead className="bg-gray-700">
+        <thead className="bg-muted">
           <tr>
             <th className="text-left p-3 font-medium">이름</th>
             <th className="text-left p-3 font-medium w-24">크기</th>
@@ -103,8 +103,8 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
           {files.map((file, index) => (
             <tr
               key={file.path}
-              className={`border-t border-gray-700 hover:bg-gray-700 cursor-pointer ${
-                index % 2 === 0 ? 'bg-gray-800' : 'bg-gray-750'
+              className={`border-t border-border hover:bg-muted cursor-pointer ${
+                index % 2 === 0 ? 'bg-card' : 'bg-muted/50'
               }`}
               onClick={() => onFileClick(file)}
             >
@@ -112,7 +112,7 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
                 <div className="flex items-center gap-3">
                   {renderIcon(file)}
                   <span
-                    className={`truncate ${file.accessDenied ? 'text-gray-500' : ''}`}
+                    className={`truncate ${file.accessDenied ? 'text-muted-foreground' : ''}`}
                     title={
                       file.accessDenied ? '권한이 필요한 파일입니다' : file.name
                     }
@@ -126,10 +126,10 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
                   </span>
                 </div>
               </td>
-              <td className="p-3 text-gray-400 text-sm">
+              <td className="p-3 text-muted-foreground text-sm">
                 {file.type === 'directory' ? '-' : formatFileSize(file.size)}
               </td>
-              <td className="p-3 text-gray-400 text-sm">
+              <td className="p-3 text-muted-foreground text-sm">
                 {formatDate(file.modified)}
               </td>
             </tr>
@@ -137,7 +137,7 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
         </tbody>
       </table>
       {files.length === 0 && (
-        <div className="text-center py-8 text-gray-400">
+        <div className="text-center py-8 text-muted-foreground">
           폴더가 비어있습니다.
         </div>
       )}

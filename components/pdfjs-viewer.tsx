@@ -194,14 +194,14 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
 
   return (
     <div
-      className={`relative bg-gray-900 text-white flex flex-col min-w-0 min-h-0 ${isFullscreen ? 'fixed inset-0 z-50' : 'h-full'}`}
+      className={`relative bg-background text-foreground flex flex-col min-w-0 min-h-0 ${isFullscreen ? 'fixed inset-0 z-50' : 'h-full'}`}
     >
       {/* 상단 툴바 */}
-      <div className="bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between">
+      <div className="bg-card border-b border-border p-4 flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <h3 className="text-lg font-medium truncate max-w-xs">{fileName}</h3>
           {numPages && (
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-muted-foreground">
               페이지 {pageNumber} / {numPages}
             </div>
           )}
@@ -244,7 +244,7 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
             <Button variant="ghost" size="sm" onClick={handleZoomIn}>
               <ZoomIn className="w-4 h-4" />
             </Button>
-            <span className="text-sm text-gray-400 min-w-[4rem]">
+            <span className="text-sm text-muted-foreground min-w-[4rem]">
               {Math.round(scale * 100)}%
             </span>
           </div>
@@ -283,44 +283,54 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
       </div>
 
       {/* PDF 콘텐츠 */}
-      <div className="flex-1 overflow-auto bg-gray-800 flex items-center justify-center p-4">
+      <div className="flex-1 overflow-auto bg-muted flex items-center justify-center p-4">
         {loading && (
           <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-            <div className="text-gray-400">PDF 로딩 중...</div>
-            <div className="text-xs text-gray-500 mt-2">파일: {fileName}</div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground mx-auto mb-4"></div>
+            <div className="text-muted-foreground">PDF 로딩 중...</div>
+            <div className="text-xs text-muted-foreground/70 mt-2">
+              파일: {fileName}
+            </div>
           </div>
         )}
 
         {error && (
           <div className="text-center py-8">
-            <div className="text-red-400 mb-4">{error}</div>
-            <div className="text-xs text-gray-500">
+            <div className="text-destructive mb-4">{error}</div>
+            <div className="text-xs text-muted-foreground/70">
               브라우저 개발자 도구에서 자세한 오류를 확인하세요.
             </div>
           </div>
         )}
 
         {!loading && !error && (
-          <div className="bg-white shadow-lg">
+          <div className="bg-background shadow-lg border border-border">
             <Document
               file={src}
               options={options}
               onLoadSuccess={onDocumentLoadSuccess}
               onLoadError={onDocumentLoadError}
               loading={
-                <div className="text-gray-600 p-4">Document 로딩 중...</div>
+                <div className="text-muted-foreground p-4">
+                  Document 로딩 중...
+                </div>
               }
-              error={<div className="text-red-600 p-4">Document 로드 실패</div>}
+              error={
+                <div className="text-destructive p-4">Document 로드 실패</div>
+              }
             >
               <Page
                 pageNumber={pageNumber}
                 scale={scale}
                 rotate={rotation}
                 loading={
-                  <div className="text-gray-600 p-4">페이지 로딩 중...</div>
+                  <div className="text-muted-foreground p-4">
+                    페이지 로딩 중...
+                  </div>
                 }
-                error={<div className="text-red-600 p-4">페이지 로드 실패</div>}
+                error={
+                  <div className="text-destructive p-4">페이지 로드 실패</div>
+                }
                 onLoadSuccess={onPageLoadSuccess}
                 onLoadError={onPageLoadError}
                 renderTextLayer={true}
@@ -333,7 +343,7 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
 
       {/* 하단 상태바 */}
       {numPages && (
-        <div className="bg-gray-800 border-t border-gray-700 px-4 py-2 text-sm text-gray-400 flex justify-between items-center">
+        <div className="bg-card border-t border-border px-4 py-2 text-sm text-muted-foreground flex justify-between items-center">
           <div>키보드 단축키: ← → (페이지), +/- (줌), R (회전), Esc (닫기)</div>
           <div>
             크기: {Math.round(scale * 100)}% | 회전: {rotation}°
