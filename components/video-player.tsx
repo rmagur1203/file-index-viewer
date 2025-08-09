@@ -132,29 +132,28 @@ export default function VideoPlayer({
   // 키보드 이벤트 핸들러
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // 추가: Esc 키로 닫기
-      if (e.key === 'Escape') {
-        onClose?.()
-        return
-      }
+      // Ctrl 또는 Meta(Mac의 Command) 키가 눌렸는지 확인
+      const isModifierKeyPressed = e.ctrlKey || e.metaKey
 
-      // Ctrl 키와 방향키 조합으로 비디오 네비게이션
-      if (e.ctrlKey) {
-        switch (e.key) {
-          case 'ArrowLeft':
-            e.preventDefault()
-            onPrevVideo?.()
-            break
-          case 'ArrowRight':
-            e.preventDefault()
-            onNextVideo?.()
-            break
+      if (isModifierKeyPressed) {
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault()
+          onPrevVideo?.()
+          return
         }
-        return
+        if (e.key === 'ArrowRight') {
+          e.preventDefault()
+          onNextVideo?.()
+          return
+        }
       }
 
-      // 일반 키보드 컨트롤
+      // 일반 키보드 컨트롤 (모디파이어 키 없이)
       switch (e.key) {
+        case 'Escape':
+          e.preventDefault()
+          onClose?.()
+          break
         case ' ':
           e.preventDefault()
           togglePlay()
