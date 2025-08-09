@@ -1,6 +1,6 @@
 "use client"
 
-import { Folder, File, Video, ImageIcon } from 'lucide-react'
+import { Folder, File, Video, ImageIcon, Lock, FileText } from 'lucide-react'
 import Image from 'next/image'
 
 interface FileItem {
@@ -11,6 +11,8 @@ interface FileItem {
   path: string
   isVideo?: boolean
   isImage?: boolean
+  isPdf?: boolean
+  accessDenied?: boolean
 }
 
 interface ListViewProps {
@@ -58,7 +60,16 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
             >
               <td className="p-3">
                 <div className="flex items-center gap-3">
-                  {file.type === 'directory' ? (
+                  {file.accessDenied ? (
+                    <div className="flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-red-400 flex-shrink-0" />
+                      {file.type === 'directory' ? (
+                        <Folder className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                      ) : (
+                        <File className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                      )}
+                    </div>
+                  ) : file.type === 'directory' ? (
                     <Folder className="w-5 h-5 text-yellow-500 flex-shrink-0" />
                   ) : file.isVideo ? (
                     <div className="flex items-center gap-3">
@@ -107,10 +118,20 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
                       </div>
                       <ImageIcon className="w-5 h-5 text-blue-500 flex-shrink-0" />
                     </div>
+                  ) : file.isPdf ? (
+                    <FileText className="w-5 h-5 text-orange-500 flex-shrink-0" />
                   ) : (
                     <File className="w-5 h-5 text-gray-400 flex-shrink-0" />
                   )}
-                  <span className="truncate">{file.name}</span>
+                  <span 
+                    className={`truncate ${file.accessDenied ? 'text-gray-500' : ''}`}
+                    title={file.accessDenied ? '권한이 필요한 파일입니다' : undefined}
+                  >
+                    {file.name}
+                    {file.accessDenied && (
+                      <span className="ml-2 text-xs text-red-400">(권한 필요)</span>
+                    )}
+                  </span>
                 </div>
               </td>
               <td className="p-3 text-gray-400 text-sm">

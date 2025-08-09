@@ -6,6 +6,36 @@ import path from 'path'
 
 const VIDEO_ROOT = process.env.VIDEO_ROOT || '/path/to/your/videos'
 
+function getContentType(filePath: string): string {
+  const ext = path.extname(filePath).toLowerCase()
+  
+  // 비디오 파일
+  if (['.mp4'].includes(ext)) return 'video/mp4'
+  if (['.mov'].includes(ext)) return 'video/quicktime'
+  if (['.avi'].includes(ext)) return 'video/x-msvideo'
+  if (['.mkv'].includes(ext)) return 'video/x-matroska'
+  if (['.webm'].includes(ext)) return 'video/webm'
+  if (['.m4v'].includes(ext)) return 'video/mp4'
+  if (['.flv'].includes(ext)) return 'video/x-flv'
+  if (['.wmv'].includes(ext)) return 'video/x-ms-wmv'
+  
+  // 이미지 파일
+  if (['.jpg', '.jpeg'].includes(ext)) return 'image/jpeg'
+  if (['.png'].includes(ext)) return 'image/png'
+  if (['.gif'].includes(ext)) return 'image/gif'
+  if (['.webp'].includes(ext)) return 'image/webp'
+  if (['.bmp'].includes(ext)) return 'image/bmp'
+  if (['.svg'].includes(ext)) return 'image/svg+xml'
+  if (['.tiff'].includes(ext)) return 'image/tiff'
+  if (['.ico'].includes(ext)) return 'image/x-icon'
+  
+  // PDF 파일
+  if (['.pdf'].includes(ext)) return 'application/pdf'
+  
+  // 기본값
+  return 'application/octet-stream'
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { path: string[] } }
@@ -28,6 +58,7 @@ export async function GET(
 
     const range = request.headers.get('range')
     const fileSize = stats.size
+    const contentType = getContentType(fullPath)
     
     if (range) {
       // Range 요청 처리 (비디오 스트리밍)
@@ -44,7 +75,7 @@ export async function GET(
           'Content-Range': `bytes ${start}-${end}/${fileSize}`,
           'Accept-Ranges': 'bytes',
           'Content-Length': chunkSize.toString(),
-          'Content-Type': 'video/mp4',
+          'Content-Type': contentType,
         },
       })
     } else {
@@ -54,7 +85,7 @@ export async function GET(
       return new NextResponse(Readable.toWeb(stream) as ReadableStream, {
         headers: {
           'Content-Length': fileSize.toString(),
-          'Content-Type': 'video/mp4',
+          'Content-Type': contentType,
         },
       })
     }

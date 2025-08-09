@@ -7,6 +7,13 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import VideoPlayer from './video-player'
 import ImageViewer from './image-viewer'
+import dynamic from 'next/dynamic'
+
+// PDF 뷰어를 클라이언트 사이드에서만 로드
+const PdfViewer = dynamic(() => import('./pdf-viewer'), {
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center h-64 text-gray-400">PDF 뷰어 로딩 중...</div>
+})
 import { Toggle } from '@/components/ui/toggle'
 import ListView from './list-view'
 import GalleryView from './gallery-view'
@@ -19,6 +26,8 @@ interface FileItem {
   path: string
   isVideo?: boolean
   isImage?: boolean
+  isPdf?: boolean
+  accessDenied?: boolean
 }
 
 interface FolderTree {
@@ -33,6 +42,7 @@ export default function FileBrowser() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null)
   const [selectedImage, setSelectedImage] = useState<{ path: string; name: string } | null>(null)
+  const [selectedPdf, setSelectedPdf] = useState<{ path: string; name: string } | null>(null)
   const [folderTree, setFolderTree] = useState<FolderTree>({})
   const [viewMode, setViewMode] = useState<'list' | 'gallery'>('list')
 
@@ -71,6 +81,8 @@ export default function FileBrowser() {
       setSelectedVideo(file.path)
     } else if (file.isImage) {
       setSelectedImage({ path: file.path, name: file.name })
+    } else if (file.isPdf) {
+      setSelectedPdf({ path: file.path, name: file.name })
     }
   }
 
@@ -267,6 +279,19 @@ export default function FileBrowser() {
             src={`/api/video${selectedImage.path}`}
             alt={selectedImage.name}
             onClose={() => setSelectedImage(null)}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
+
+    {/* PDF Viewer Modal */}
+    <Dialog open={!!selectedPdf} onOpenChange={() => setSelectedPdf(null)}>
+      <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full bg-gray-900 border-gray-700 p-0 [&>button]:hidden">
+        {selectedPdf && (
+          <PdfViewer
+            src={`/api/video${selectedPdf.path}`}
+            fileName={selectedPdf.name}
+            onClose={() => setSelectedPdf(null)}
           />
         )}
       </DialogContent>

@@ -17,7 +17,6 @@ export default function ImageViewer({ src, alt, onClose }: ImageViewerProps) {
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
-  const [isFullscreen, setIsFullscreen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
 
@@ -80,16 +79,14 @@ export default function ImageViewer({ src, alt, onClose }: ImageViewerProps) {
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
       containerRef.current?.requestFullscreen()
-      setIsFullscreen(true)
     } else {
       document.exitFullscreen()
-      setIsFullscreen(false)
     }
   }, [])
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement)
+      // Fullscreen state tracking removed to fix ESLint warnings
     }
 
     document.addEventListener('fullscreenchange', handleFullscreenChange)

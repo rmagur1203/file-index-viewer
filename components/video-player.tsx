@@ -8,9 +8,11 @@ import { Slider } from '@/components/ui/slider'
 interface VideoPlayerProps {
   src: string
   onClose: () => void
+  onPrevVideo?: () => void
+  onNextVideo?: () => void
 }
 
-export default function VideoPlayer({ src }: VideoPlayerProps) {
+export default function VideoPlayer({ src, onPrevVideo, onNextVideo }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -105,6 +107,65 @@ export default function VideoPlayer({ src }: VideoPlayerProps) {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }
 
+  // 키보드 이벤트 핸들러
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl 키와 방향키 조합으로 비디오 네비게이션
+      if (e.ctrlKey) {
+        switch (e.key) {
+          case 'ArrowLeft':
+            e.preventDefault()
+            onPrevVideo?.()
+            break
+          case 'ArrowRight':
+            e.preventDefault()
+            onNextVideo?.()
+            break
+        }
+        return
+      }
+
+      // 일반 키보드 컨트롤
+      switch (e.key) {
+        case ' ':
+          e.preventDefault()
+          togglePlay()
+          break
+        case 'ArrowLeft':
+          e.preventDefault()
+          skip(-5)
+          break
+        case 'ArrowRight':
+          e.preventDefault()
+          skip(5)
+          break
+        case 'ArrowUp':
+          e.preventDefault()
+          const newVolumeUp = Math.min(1, volume + 0.1)
+          handleVolumeChange([newVolumeUp])
+          break
+        case 'ArrowDown':
+          e.preventDefault()
+          const newVolumeDown = Math.max(0, volume - 0.1)
+          handleVolumeChange([newVolumeDown])
+          break
+        case 'm':
+        case 'M':
+          e.preventDefault()
+          toggleMute()
+          break
+        case 'f':
+        case 'F':
+          e.preventDefault()
+          toggleFullscreen()
+          break
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [togglePlay, skip, volume, handleVolumeChange, toggleMute, toggleFullscreen, onPrevVideo, onNextVideo])
+
   return (
     <div 
       className="relative bg-black rounded-lg overflow-hidden"
@@ -195,9 +256,25 @@ export default function VideoPlayer({ src }: VideoPlayerProps) {
               size="icon"
               onClick={toggleFullscreen}
               className="text-white hover:bg-white/20"
+              title="전체화면 (F)"
             >
               <Maximize className="w-5 h-5" />
             </Button>
+          </div>
+        </div>
+
+        {/* Keyboard Controls Info */}
+        <div className="absolute top-4 right-4 bg-black/60 rounded-lg p-3 text-white text-xs max-w-xs">
+          <div className="space-y-1">
+            <div className="font-semibold mb-2">키보드 컨트롤</div>
+            <div>스페이스: 재생/일시정지</div>
+            <div>← →: 5초 이동</div>
+            <div>↑ ↓: 볼륨 조절</div>
+            <div>M: 음소거</div>
+            <div>F: 전체화면</div>
+            <div className="border-t border-white/20 pt-2 mt-2">
+              <div>Ctrl + ← →: 이전/다음 영상</div>
+            </div>
           </div>
         </div>
       </div>

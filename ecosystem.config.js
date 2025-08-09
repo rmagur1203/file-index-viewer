@@ -12,14 +12,14 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 3000,
-        VIDEO_ROOT: '/usr/local/var/www/Twitter'
+        VIDEO_ROOT: '/usr/local/var/www'
       },
       
       // Development environment
       env_development: {
         NODE_ENV: 'development',
         PORT: 3000,
-        VIDEO_ROOT: '/usr/local/var/www/Twitter'
+        VIDEO_ROOT: '/usr/local/var/www'
       },
       
       // Logging

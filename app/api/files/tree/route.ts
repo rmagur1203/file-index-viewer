@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { promises as fs } from 'fs'
 import path from 'path'
+import { sudoReaddir } from '@/lib/sudo-fs'
 
 const VIDEO_ROOT = process.env.VIDEO_ROOT || '/path/to/your/videos'
 
@@ -12,7 +12,7 @@ async function buildFolderTree(dirPath: string, maxDepth = 3, currentDepth = 0):
   if (currentDepth >= maxDepth) return {}
   
   try {
-    const items = await fs.readdir(dirPath, { withFileTypes: true })
+    const items = await sudoReaddir(dirPath)
     const tree: FolderTree = {}
     
     for (const item of items) {
