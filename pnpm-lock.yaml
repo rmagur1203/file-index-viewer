@@ -177,6 +177,9 @@ importers:
       '@types/react-dom':
         specifier: ^18
         version: 18.3.7(@types/react@18.3.23)
+      '@typescript/native-preview':
+        specifier: 7.0.0-dev.20250809.1
+        version: 7.0.0-dev.20250809.1
       eslint:
         specifier: ^8
         version: 8.57.1
@@ -1176,6 +1179,53 @@ packages:
   '@typescript-eslint/visitor-keys@6.21.0':
     resolution: {integrity: sha512-JJtkDduxLi9bivAB+cYOVMtbkqdPOhZ+ZI5LC47MIRrDV4Yn2o+ZnW10Nkmr28xRpSpdJ6Sm42Hjf2+REYXm0A==}
     engines: {node: ^16.0.0 || >=18.0.0}
+
+  '@typescript/native-preview-darwin-arm64@7.0.0-dev.20250809.1':
+    resolution: {integrity: sha512-qIm3SE7TXXOhjPhIVuy9DNP4PMVPv2+0YFFU2bTrdkdqkI6yucNUIe6IQzRmFoBfjwAxWAUiU6mfhMOMWWUz0Q==}
+    engines: {node: '>=20.6.0'}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@typescript/native-preview-darwin-x64@7.0.0-dev.20250809.1':
+    resolution: {integrity: sha512-DdN1zjPRk9zgFoUDdH24lXPWrmoV04NL4gLyyRk8crAvkeNIjjTsCUJjhTspBWaX0/F/xt9F2jvCs42Ks4F1IA==}
+    engines: {node: '>=20.6.0'}
+    cpu: [x64]
+    os: [darwin]
+
+  '@typescript/native-preview-linux-arm64@7.0.0-dev.20250809.1':
+    resolution: {integrity: sha512-lHkJMo4e9XTPvss//j4nSEmL6oPD38z7vYDAE2kymzVJ8uKypLUkPQqZj5YJX3bCzmWEljqzR9gQhvI5PP1xdQ==}
+    engines: {node: '>=20.6.0'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@typescript/native-preview-linux-arm@7.0.0-dev.20250809.1':
+    resolution: {integrity: sha512-54VxgJa9JQGCfipPkFhgbDWavsfy3QZ1lDKYb/LW2S1dTk7bZL1smeQcRX4/IBz8WyKhQHNR6jkNEq9a402SsA==}
+    engines: {node: '>=20.6.0'}
+    cpu: [arm]
+    os: [linux]
+
+  '@typescript/native-preview-linux-x64@7.0.0-dev.20250809.1':
+    resolution: {integrity: sha512-7KPOJ27ZYF5Es1108AKghFyTOU/HZdVAWfXjSwMMLDLU1HT1EswsNWDYVOaWS9uCUlwakG3trM4miT6pwdDilA==}
+    engines: {node: '>=20.6.0'}
+    cpu: [x64]
+    os: [linux]
+
+  '@typescript/native-preview-win32-arm64@7.0.0-dev.20250809.1':
+    resolution: {integrity: sha512-b9PjPxfsn1chAVQiGWjIyZSIEG0Wu9dgPWzAEBczYE7ESAPsiEb9/SriJCSJoq0L1ffRixRleis4zrUlmoxBLw==}
+    engines: {node: '>=20.6.0'}
+    cpu: [arm64]
+    os: [win32]
+
+  '@typescript/native-preview-win32-x64@7.0.0-dev.20250809.1':
+    resolution: {integrity: sha512-zDI3sfGYdvpgLFPfixJTwcKBDrq3/0TGb99pRgUj4Qvn4BeZN8O8gzxaDHMnzVlpSzHxMwMlOeBsMj/iSzh8Vg==}
+    engines: {node: '>=20.6.0'}
+    cpu: [x64]
+    os: [win32]
+
+  '@typescript/native-preview@7.0.0-dev.20250809.1':
+    resolution: {integrity: sha512-YprIXmn784t5fZqX11tal8uf8I+PWhGtsP5CqRxp5DysEXDA+DLummkc1l3zZUZ8uVzc/zZG3aIpAWBPMmOoFw==}
+    engines: {node: '>=20.6.0'}
+    hasBin: true
 
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
@@ -3949,6 +3999,37 @@ snapshots:
     dependencies:
       '@typescript-eslint/types': 6.21.0
       eslint-visitor-keys: 3.4.3
+
+  '@typescript/native-preview-darwin-arm64@7.0.0-dev.20250809.1':
+    optional: true
+
+  '@typescript/native-preview-darwin-x64@7.0.0-dev.20250809.1':
+    optional: true
+
+  '@typescript/native-preview-linux-arm64@7.0.0-dev.20250809.1':
+    optional: true
+
+  '@typescript/native-preview-linux-arm@7.0.0-dev.20250809.1':
+    optional: true
+
+  '@typescript/native-preview-linux-x64@7.0.0-dev.20250809.1':
+    optional: true
+
+  '@typescript/native-preview-win32-arm64@7.0.0-dev.20250809.1':
+    optional: true
+
+  '@typescript/native-preview-win32-x64@7.0.0-dev.20250809.1':
+    optional: true
+
+  '@typescript/native-preview@7.0.0-dev.20250809.1':
+    optionalDependencies:
+      '@typescript/native-preview-darwin-arm64': 7.0.0-dev.20250809.1
+      '@typescript/native-preview-darwin-x64': 7.0.0-dev.20250809.1
+      '@typescript/native-preview-linux-arm': 7.0.0-dev.20250809.1
+      '@typescript/native-preview-linux-arm64': 7.0.0-dev.20250809.1
+      '@typescript/native-preview-linux-x64': 7.0.0-dev.20250809.1
+      '@typescript/native-preview-win32-arm64': 7.0.0-dev.20250809.1
+      '@typescript/native-preview-win32-x64': 7.0.0-dev.20250809.1
 
   '@ungap/structured-clone@1.3.0': {}
 
