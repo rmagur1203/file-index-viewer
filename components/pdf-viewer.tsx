@@ -19,11 +19,7 @@ import { Slider } from '@/components/ui/slider'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
 import 'react-pdf/dist/Page/TextLayer.css'
 
-// PDF.js 워커 설정 (브라우저에서만)
-if (typeof window !== 'undefined') {
-  // 다양한 워커 경로 시도
-  pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`
-}
+// PDF.js 워커 설정을 컴포넌트 내부에서 처리
 
 interface PdfViewerProps {
   src: string
@@ -37,17 +33,34 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
   const [scale, setScale] = useState(1.0)
   const [rotation, setRotation] = useState(0)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false) // Document 컴포넌트가 렌더링되도록 초기값 false
   const [error, setError] = useState<string | null>(null)
 
-  // 컴포넌트 마운트 시 PDF.js 설정 확인
+  // PDF.js 워커 설정 및 초기화 (웹 검색 결과 기반)
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      console.log('PDF.js 버전:', pdfjs.version)
-      console.log('워커 경로:', pdfjs.GlobalWorkerOptions.workerSrc)
-      console.log('PDF 파일 경로:', src)
+      // 로컬 워커 파일 사용 (버전 호환성 확보)
+      pdfjs.GlobalWorkerOptions.workerSrc = '/pdfjs-dist/legacy/build/pdf.worker.min.js'
+      
+      console.log('🔧 PDF.js 초기화 완료')
+      console.log('📄 PDF.js 버전:', pdfjs.version)
+      console.log('⚙️ 워커 경로:', pdfjs.GlobalWorkerOptions.workerSrc)
+      console.log('📂 PDF 파일 경로:', src)
+      
+      // 워커 파일 사전 로드 테스트
+      fetch(pdfjs.GlobalWorkerOptions.workerSrc)
+        .then(response => {
+          if (response.ok) {
+            console.log('✅ PDF 워커 파일 접근 성공')
+          } else {
+            console.error('❌ PDF 워커 파일 접근 실패:', response.status)
+          }
+        })
+        .catch(error => {
+          console.error('❌ PDF 워커 파일 로드 오류:', error)
+        })
     }
-  }, [src])
+  }, [])
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     console.log('PDF 로드 성공:', numPages, '페이지')
@@ -58,6 +71,12 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
 
   const onDocumentLoadError = (error: Error) => {
     console.error('PDF 로드 오류:', error)
+    console.error('PDF 파일 경로:', src)
+    console.error('오류 상세:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    })
     setError(`PDF 파일을 로드할 수 없습니다: ${error.message}`)
     setLoading(false)
   }
@@ -259,8 +278,8 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
               file={src}
               onLoadSuccess={onDocumentLoadSuccess}
               onLoadError={onDocumentLoadError}
-              loading=""
-              error=""
+              loading={<div className="text-gray-600 p-4">Document 로딩 중...</div>}
+              error={<div className="text-red-600 p-4">Document 로드 실패</div>}
             >
               <Page
                 pageNumber={pageNumber}

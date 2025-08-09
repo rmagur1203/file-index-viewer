@@ -9,10 +9,17 @@ import VideoPlayer from './video-player'
 import ImageViewer from './image-viewer'
 import dynamic from 'next/dynamic'
 
-// PDF 뷰어를 클라이언트 사이드에서만 로드
-const PdfViewer = dynamic(() => import('./pdf-viewer'), {
+// iframe 기반 PDF 뷰어 (안정적이고 빠른 해결책)
+const IframePdfViewer = dynamic(() => import('./iframe-pdf-viewer'), {
   ssr: false,
-  loading: () => <div className="flex items-center justify-center h-64 text-gray-400">PDF 뷰어 로딩 중...</div>
+  loading: () => (
+    <div className="flex items-center justify-center h-64 text-gray-400">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+        <div>PDF 뷰어 로딩 중...</div>
+      </div>
+    </div>
+  )
 })
 import { Toggle } from '@/components/ui/toggle'
 import ListView from './list-view'
@@ -43,6 +50,7 @@ export default function FileBrowser() {
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null)
   const [selectedImage, setSelectedImage] = useState<{ path: string; name: string } | null>(null)
   const [selectedPdf, setSelectedPdf] = useState<{ path: string; name: string } | null>(null)
+  const [renderPdfViewer, setRenderPdfViewer] = useState(false)
   const [folderTree, setFolderTree] = useState<FolderTree>({})
   const [viewMode, setViewMode] = useState<'list' | 'gallery'>('list')
 
@@ -50,6 +58,20 @@ export default function FileBrowser() {
     fetchFiles(currentPath)
     fetchFolderTree()
   }, [currentPath])
+
+  // 웹 검색 결과: 모달 열린 후 PDF 뷰어 렌더링 지연
+  useEffect(() => {
+    if (selectedPdf) {
+      setRenderPdfViewer(false) // 먼저 리셋
+      const timer = setTimeout(() => {
+        setRenderPdfViewer(true)
+        console.log('🎯 PDF 뷰어 렌더링 시작 (DOM 준비 완료)')
+      }, 150) // 150ms 지연으로 DOM 준비 대기
+      return () => clearTimeout(timer)
+    } else {
+      setRenderPdfViewer(false)
+    }
+  }, [selectedPdf])
 
   const fetchFiles = async (path: string) => {
     setLoading(true)
@@ -182,25 +204,25 @@ export default function FileBrowser() {
               </div>
             </div>
             
-            <div className="flex items-center gap-2 bg-gray-700 rounded-lg p-1">
-              <Toggle
-                pressed={viewMode === 'list'}
-                onPressedChange={() => setViewMode('list')}
-                aria-label="리스트 뷰"
-                className="data-[state=on]:bg-blue-600 data-[state=on]:text-white"
-                size="sm"
-              >
-                <List className="w-4 h-4" />
-              </Toggle>
-              <Toggle
-                pressed={viewMode === 'gallery'}
-                onPressedChange={() => setViewMode('gallery')}
-                aria-label="갤러리 뷰"
-                className="data-[state=on]:bg-blue-600 data-[state=on]:text-white"
-                size="sm"
-              >
-                <Grid className="w-4 h-4" />
-              </Toggle>
+              <div className="flex items-center gap-2 bg-gray-700 rounded-lg p-1">
+                <Toggle
+                  pressed={viewMode === 'list'}
+                  onPressedChange={() => setViewMode('list')}
+                  aria-label="리스트 뷰"
+                  className="data-[state=on]:bg-blue-600 data-[state=on]:text-white"
+                  size="sm"
+                >
+                  <List className="w-4 h-4" />
+                </Toggle>
+                <Toggle
+                  pressed={viewMode === 'gallery'}
+                  onPressedChange={() => setViewMode('gallery')}
+                  aria-label="갤러리 뷰"
+                  className="data-[state=on]:bg-blue-600 data-[state=on]:text-white"
+                  size="sm"
+                >
+                  <Grid className="w-4 h-4" />
+                </Toggle>
             </div>
           </div>
         </div>
@@ -287,13 +309,21 @@ export default function FileBrowser() {
     {/* PDF Viewer Modal */}
     <Dialog open={!!selectedPdf} onOpenChange={() => setSelectedPdf(null)}>
       <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full bg-gray-900 border-gray-700 p-0 [&>button]:hidden">
-        {selectedPdf && (
-          <PdfViewer
-            src={`/api/video${selectedPdf.path}`}
+        {selectedPdf && renderPdfViewer ? (
+          <IframePdfViewer
+            src={selectedPdf.path.startsWith('/test.pdf') ? '/test.pdf' : `/api/video${selectedPdf.path}`}
             fileName={selectedPdf.name}
             onClose={() => setSelectedPdf(null)}
           />
-        )}
+        ) : selectedPdf ? (
+          <div className="flex items-center justify-center h-full text-gray-400">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+              <div className="text-lg">모달 준비 중...</div>
+              <div className="text-sm text-gray-500">DOM 초기화 대기</div>
+            </div>
+          </div>
+        ) : null}
       </DialogContent>
     </Dialog>
   </div>
