@@ -40,7 +40,8 @@ export async function GET(request: NextRequest) {
             path: relativePath.startsWith('/')
               ? relativePath
               : '/' + relativePath,
-            mediaType: item.isFile() ? getMediaType(item.name) : undefined,
+            mediaType:
+              (item.isFile() ? getMediaType(item.name) : undefined) || 'text',
           }
         } catch (error) {
           console.error(`Error getting stats for ${itemPath}:`, error)
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
             path: relativePath.startsWith('/')
               ? relativePath
               : '/' + relativePath,
-            mediaType: undefined,
+            mediaType: 'text',
             accessDenied: true,
           }
         }

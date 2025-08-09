@@ -27,8 +27,45 @@ export const imageExtensions = [
   '.ico',
 ]
 export const pdfExtensions = ['.pdf']
+export const textExtensions = [
+  '.txt',
+  '.md',
+  '.log',
+  '.json',
+  '.js',
+  '.ts',
+  '.tsx',
+  '.jsx',
+  '.css',
+  '.html',
+  '.htm',
+  '.xml',
+  '.yaml',
+  '.yml',
+  '.sh',
+  '.bash',
+  '.zsh',
+  '.py',
+  '.rb',
+  '.java',
+  '.c',
+  '.cpp',
+  '.h',
+  '.hpp',
+  '.go',
+  '.rs',
+  '.php',
+  '.ini',
+  '.cfg',
+  '.env',
+]
 
-const allExtensions = [...videoExtensions, ...imageExtensions, ...pdfExtensions]
+const allExtensions = [
+  ...videoExtensions,
+  ...imageExtensions,
+  ...pdfExtensions,
+  ...textExtensions,
+]
 
 const hasExtension = (fileName: string, extensions: string[]): boolean => {
   const lowerCaseFileName = fileName.toLowerCase()
@@ -44,12 +81,16 @@ export const isImage = (fileName: string): boolean =>
 export const isPdf = (fileName: string): boolean =>
   hasExtension(fileName, pdfExtensions)
 
+export const isText = (fileName: string): boolean =>
+  hasExtension(fileName, textExtensions)
+
 export const getMediaType = (
   fileName: string
-): 'video' | 'image' | 'pdf' | undefined => {
+): 'video' | 'image' | 'pdf' | 'text' | undefined => {
   if (isVideo(fileName)) return 'video'
   if (isImage(fileName)) return 'image'
   if (isPdf(fileName)) return 'pdf'
+  if (isText(fileName)) return 'text'
   return undefined
 }
 
@@ -94,6 +135,38 @@ export const getContentType = (filePath: string): string => {
     // PDF 파일
     case 'pdf':
       return 'application/pdf'
+    // 텍스트 파일
+    case 'txt':
+    case 'md':
+    case 'log':
+    case 'json':
+    case 'js':
+    case 'ts':
+    case 'tsx':
+    case 'jsx':
+    case 'css':
+    case 'html':
+    case 'htm':
+    case 'xml':
+    case 'yaml':
+    case 'yml':
+    case 'sh':
+    case 'bash':
+    case 'zsh':
+    case 'py':
+    case 'rb':
+    case 'java':
+    case 'c':
+    case 'cpp':
+    case 'h':
+    case 'hpp':
+    case 'go':
+    case 'rs':
+    case 'php':
+    case 'ini':
+    case 'cfg':
+    case 'env':
+      return 'text/plain; charset=utf-8'
     // 기본값
     default:
       return 'application/octet-stream'

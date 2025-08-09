@@ -42,10 +42,22 @@ const PdfJsViewer = dynamic(() => import('./pdfjs-viewer'), {
   ),
 })
 
+const TextViewer = dynamic(() => import('./text-viewer'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-64 text-gray-400">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+        <div>텍스트 뷰어 컴포넌트 로딩 중...</div>
+      </div>
+    </div>
+  ),
+})
+
 interface SelectedMedia {
   path: string
   name: string
-  type: 'video' | 'image' | 'pdf'
+  type: 'video' | 'image' | 'pdf' | 'text'
 }
 
 export default function FileBrowser() {
@@ -81,7 +93,8 @@ export default function FileBrowser() {
       file.mediaType &&
       (file.mediaType === 'video' ||
         file.mediaType === 'image' ||
-        file.mediaType === 'pdf')
+        file.mediaType === 'pdf' ||
+        file.mediaType === 'text')
     ) {
       setSelectedMedia({
         path: file.path,
@@ -151,7 +164,9 @@ export default function FileBrowser() {
           className={
             selectedMedia?.type === 'video'
               ? 'max-w-4xl w-full bg-gray-900 border-gray-700'
-              : 'max-w-[95vw] max-h-[95vh] w-full h-full bg-gray-900 border-gray-700 p-0 [&>button]:hidden'
+              : selectedMedia?.type === 'text'
+                ? 'max-w-4xl w-full h-[80vh] bg-gray-900 border-gray-700 flex flex-col'
+                : 'max-w-[95vw] max-h-[95vh] w-full h-full bg-gray-900 border-gray-700 p-0 [&>button]:hidden'
           }
         >
           {selectedMedia?.type === 'video' && (
@@ -180,6 +195,18 @@ export default function FileBrowser() {
               fileName={selectedMedia.name}
               onClose={() => setSelectedMedia(null)}
             />
+          )}
+          {selectedMedia?.type === 'text' && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-white truncate pr-10">
+                  {selectedMedia?.name}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="flex-1 overflow-y-auto">
+                <TextViewer src={`/api/media${selectedMedia.path}`} />
+              </div>
+            </>
           )}
           {selectedMedia?.type === 'pdf' && !renderPdfViewer && (
             <div className="flex items-center justify-center h-full text-gray-400">
