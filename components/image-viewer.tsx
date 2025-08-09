@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { ZoomIn, ZoomOut, RotateCw, Download, Maximize, X } from 'lucide-react'
@@ -21,15 +21,15 @@ export default function ImageViewer({ src, alt, onClose }: ImageViewerProps) {
   const imageRef = useRef<HTMLImageElement>(null)
 
   const handleZoomIn = useCallback(() => {
-    setScale(prev => Math.min(prev * 1.25, 5))
+    setScale((prev) => Math.min(prev * 1.25, 5))
   }, [])
 
   const handleZoomOut = useCallback(() => {
-    setScale(prev => Math.max(prev / 1.25, 0.1))
+    setScale((prev) => Math.max(prev / 1.25, 0.1))
   }, [])
 
   const handleRotate = useCallback(() => {
-    setRotation(prev => (prev + 90) % 360)
+    setRotation((prev) => (prev + 90) % 360)
   }, [])
 
   const handleReset = useCallback(() => {
@@ -47,34 +47,43 @@ export default function ImageViewer({ src, alt, onClose }: ImageViewerProps) {
     document.body.removeChild(link)
   }, [src, alt])
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-    setDragStart({
-      x: e.clientX - position.x,
-      y: e.clientY - position.y
-    })
-  }, [position])
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      setIsDragging(true)
+      setDragStart({
+        x: e.clientX - position.x,
+        y: e.clientY - position.y,
+      })
+    },
+    [position]
+  )
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging) return
-    
-    setPosition({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y
-    })
-  }, [isDragging, dragStart])
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      if (!isDragging) return
+
+      setPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y,
+      })
+    },
+    [isDragging, dragStart]
+  )
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false)
   }, [])
 
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault()
-    const delta = e.deltaY > 0 ? -1 : 1
-    const newScale = Math.max(0.1, Math.min(5, scale + delta * 0.1))
-    setScale(newScale)
-  }, [scale])
+  const handleWheel = useCallback(
+    (e: React.WheelEvent) => {
+      e.preventDefault()
+      const delta = e.deltaY > 0 ? -1 : 1
+      const newScale = Math.max(0.1, Math.min(5, scale + delta * 0.1))
+      setScale(newScale)
+    },
+    [scale]
+  )
 
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
@@ -90,7 +99,8 @@ export default function ImageViewer({ src, alt, onClose }: ImageViewerProps) {
     }
 
     document.addEventListener('fullscreenchange', handleFullscreenChange)
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+    return () =>
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
   }, [])
 
   useEffect(() => {
@@ -129,7 +139,7 @@ export default function ImageViewer({ src, alt, onClose }: ImageViewerProps) {
   }, [handleZoomIn, handleZoomOut, handleRotate, handleReset, onClose])
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className="relative w-full h-full bg-black overflow-hidden select-none"
       onMouseMove={handleMouseMove}
@@ -143,7 +153,7 @@ export default function ImageViewer({ src, alt, onClose }: ImageViewerProps) {
           className="relative cursor-move"
           style={{
             transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
-            transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+            transition: isDragging ? 'none' : 'transform 0.1s ease-out',
           }}
           onMouseDown={handleMouseDown}
         >
@@ -154,11 +164,11 @@ export default function ImageViewer({ src, alt, onClose }: ImageViewerProps) {
             width={800}
             height={600}
             className="max-w-full max-h-full object-contain"
-            style={{ 
-              maxWidth: '90vw', 
+            style={{
+              maxWidth: '90vw',
               maxHeight: '90vh',
               userSelect: 'none',
-              pointerEvents: 'none'
+              pointerEvents: 'none',
             }}
             unoptimized
           />
@@ -177,7 +187,7 @@ export default function ImageViewer({ src, alt, onClose }: ImageViewerProps) {
           >
             <ZoomOut className="w-5 h-5" />
           </Button>
-          
+
           <Button
             variant="ghost"
             size="icon"
@@ -187,7 +197,7 @@ export default function ImageViewer({ src, alt, onClose }: ImageViewerProps) {
           >
             <ZoomIn className="w-5 h-5" />
           </Button>
-          
+
           <Button
             variant="ghost"
             size="icon"
@@ -197,7 +207,7 @@ export default function ImageViewer({ src, alt, onClose }: ImageViewerProps) {
           >
             <RotateCw className="w-5 h-5" />
           </Button>
-          
+
           <Button
             variant="ghost"
             size="icon"
@@ -219,7 +229,7 @@ export default function ImageViewer({ src, alt, onClose }: ImageViewerProps) {
           >
             <Download className="w-5 h-5" />
           </Button>
-          
+
           <Button
             variant="ghost"
             size="icon"
@@ -229,7 +239,7 @@ export default function ImageViewer({ src, alt, onClose }: ImageViewerProps) {
           >
             <Maximize className="w-5 h-5" />
           </Button>
-          
+
           {onClose && (
             <Button
               variant="ghost"
@@ -250,7 +260,8 @@ export default function ImageViewer({ src, alt, onClose }: ImageViewerProps) {
           <div>배율: {Math.round(scale * 100)}%</div>
           <div>회전: {rotation}°</div>
           <div className="text-xs text-gray-300 mt-2">
-            마우스 휠: 확대/축소 | 드래그: 이동<br />
+            마우스 휠: 확대/축소 | 드래그: 이동
+            <br />
             키보드: +/- (확대/축소), R (회전), 0 (리셋), ESC (닫기)
           </div>
         </div>

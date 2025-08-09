@@ -5,6 +5,7 @@
 ## 필수 조건
 
 PM2가 전역으로 설치되어 있어야 합니다:
+
 ```bash
 npm install -g pm2
 ```
@@ -12,15 +13,17 @@ npm install -g pm2
 ## 사용 가능한 명령어
 
 ### 애플리케이션 시작
+
 ```bash
 # 프로덕션 환경으로 시작
 bun run pm2:start
 
-# 개발 환경으로 시작  
+# 개발 환경으로 시작
 bun run pm2:dev
 ```
 
 ### 애플리케이션 관리
+
 ```bash
 # 애플리케이션 중지
 bun run pm2:stop
@@ -36,6 +39,7 @@ bun run pm2:delete
 ```
 
 ### 모니터링
+
 ```bash
 # 로그 보기
 bun run pm2:logs
@@ -56,11 +60,13 @@ pm2 monit
 ## 주의사항
 
 1. 프로덕션 환경에서 실행하기 전에 먼저 빌드를 수행하세요:
+
    ```bash
    bun run build
    ```
 
 2. 시스템 재부팅 시 자동 시작을 원한다면:
+
    ```bash
    pm2 startup
    pm2 save

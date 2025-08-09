@@ -18,6 +18,7 @@ your_username ALL=(ALL) NOPASSWD: /usr/bin/stat, /usr/bin/find
 ```
 
 예시:
+
 ```
 user ALL=(ALL) NOPASSWD: /usr/bin/stat, /usr/bin/find
 ```
@@ -30,7 +31,7 @@ user ALL=(ALL) NOPASSWD: /usr/bin/stat, /usr/bin/find
 # stat 명령어 테스트
 sudo stat /usr/local/var/www
 
-# find 명령어 테스트  
+# find 명령어 테스트
 sudo find /usr/local/var/www -maxdepth 1 -mindepth 1
 ```
 
@@ -53,4 +54,3 @@ pnpm dev
 ```
 
 이제 애플리케이션이 루트 권한이 필요한 파일들도 읽을 수 있습니다!
-

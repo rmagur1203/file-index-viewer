@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { Folder, Play, ImageIcon, FileText } from 'lucide-react'
 import Image from 'next/image'
@@ -53,8 +53,10 @@ export default function GalleryView({ files, onFileClick }: GalleryViewProps) {
                     const parent = target.parentElement
                     if (parent) {
                       const fallback = document.createElement('div')
-                      fallback.className = 'w-full h-full flex items-center justify-center bg-gray-600'
-                      fallback.innerHTML = '<svg class="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"></path></svg>'
+                      fallback.className =
+                        'w-full h-full flex items-center justify-center bg-gray-600'
+                      fallback.innerHTML =
+                        '<svg class="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"></path></svg>'
                       parent.appendChild(fallback)
                     }
                   }}
@@ -79,8 +81,10 @@ export default function GalleryView({ files, onFileClick }: GalleryViewProps) {
                     const parent = target.parentElement
                     if (parent) {
                       const fallback = document.createElement('div')
-                      fallback.className = 'w-full h-full flex items-center justify-center bg-gray-600'
-                      fallback.innerHTML = '<svg class="w-8 h-8 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path></svg>'
+                      fallback.className =
+                        'w-full h-full flex items-center justify-center bg-gray-600'
+                      fallback.innerHTML =
+                        '<svg class="w-8 h-8 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path></svg>'
                       parent.appendChild(fallback)
                     }
                   }}
@@ -107,14 +111,25 @@ export default function GalleryView({ files, onFileClick }: GalleryViewProps) {
               </>
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gray-600">
-                <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                <svg
+                  className="w-8 h-8 text-gray-400"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </div>
             )}
           </div>
           <div className="p-3">
-            <h3 className="text-sm font-medium text-white truncate" title={file.name}>
+            <h3
+              className="text-sm font-medium text-white truncate"
+              title={file.name}
+            >
               {file.name}
             </h3>
             {file.type === 'file' && (

@@ -1,18 +1,18 @@
-"use client"
+'use client'
 
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
-import { 
-  ZoomIn, 
-  ZoomOut, 
-  RotateCw, 
-  RotateCcw, 
-  Download, 
-  ChevronLeft, 
+import {
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  RotateCcw,
+  Download,
+  ChevronLeft,
   ChevronRight,
   Maximize2,
   Minimize2,
-  X 
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
@@ -50,22 +50,22 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
     if (typeof window !== 'undefined') {
       // 안정성을 위해 로컬 워커 경로 사용
       pdfjs.GlobalWorkerOptions.workerSrc = '/pdfjs-dist/pdf.worker.min.mjs'
-      
+
       console.log('🔧 PDF.js 워커 초기화 완료')
       console.log('📄 PDF.js 버전:', pdfjs.version)
       console.log('⚙️ 워커 경로:', pdfjs.GlobalWorkerOptions.workerSrc)
       console.log('📂 PDF 파일 경로:', src)
-      
+
       // 워커 파일 사전 로드 테스트
       fetch(pdfjs.GlobalWorkerOptions.workerSrc)
-        .then(response => {
+        .then((response) => {
           if (response.ok) {
             console.log('✅ PDF 워커 파일 접근 성공')
           } else {
             console.error('❌ PDF 워커 파일 접근 실패:', response.status)
           }
         })
-        .catch(error => {
+        .catch((error) => {
           console.error('❌ PDF 워커 파일 로드 오류:', error)
         })
     }
@@ -84,7 +84,7 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
     console.error('오류 상세:', {
       name: error.name,
       message: error.message,
-      stack: error.stack
+      stack: error.stack,
     })
     setError(`PDF 파일을 로드할 수 없습니다: ${error.message}`)
     setLoading(false)
@@ -99,27 +99,27 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
   }
 
   const handleZoomIn = useCallback(() => {
-    setScale(prev => Math.min(prev * 1.2, 3.0))
+    setScale((prev) => Math.min(prev * 1.2, 3.0))
   }, [])
 
   const handleZoomOut = useCallback(() => {
-    setScale(prev => Math.max(prev / 1.2, 0.3))
+    setScale((prev) => Math.max(prev / 1.2, 0.3))
   }, [])
 
   const handleRotateClockwise = useCallback(() => {
-    setRotation(prev => (prev + 90) % 360)
+    setRotation((prev) => (prev + 90) % 360)
   }, [])
 
   const handleRotateCounterclockwise = useCallback(() => {
-    setRotation(prev => (prev - 90 + 360) % 360)
+    setRotation((prev) => (prev - 90 + 360) % 360)
   }, [])
 
   const handlePrevPage = useCallback(() => {
-    setPageNumber(prev => Math.max(prev - 1, 1))
+    setPageNumber((prev) => Math.max(prev - 1, 1))
   }, [])
 
   const handleNextPage = useCallback(() => {
-    setPageNumber(prev => numPages ? Math.min(prev + 1, numPages) : prev)
+    setPageNumber((prev) => (numPages ? Math.min(prev + 1, numPages) : prev))
   }, [numPages])
 
   const handleDownload = useCallback(() => {
@@ -132,7 +132,7 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
   }, [src, fileName])
 
   const toggleFullscreen = useCallback(() => {
-    setIsFullscreen(prev => !prev)
+    setIsFullscreen((prev) => !prev)
   }, [])
 
   const handleScaleChange = useCallback((value: number[]) => {
@@ -180,10 +180,21 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isFullscreen, onClose, handlePrevPage, handleNextPage, handleZoomIn, handleZoomOut, handleRotateClockwise, handleRotateCounterclockwise])
+  }, [
+    isFullscreen,
+    onClose,
+    handlePrevPage,
+    handleNextPage,
+    handleZoomIn,
+    handleZoomOut,
+    handleRotateClockwise,
+    handleRotateCounterclockwise,
+  ])
 
   return (
-    <div className={`relative bg-gray-900 text-white flex flex-col min-w-0 min-h-0 ${isFullscreen ? 'fixed inset-0 z-50' : 'h-full'}`}>
+    <div
+      className={`relative bg-gray-900 text-white flex flex-col min-w-0 min-h-0 ${isFullscreen ? 'fixed inset-0 z-50' : 'h-full'}`}
+    >
       {/* 상단 툴바 */}
       <div className="bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between">
         <div className="flex items-center space-x-4">
@@ -194,7 +205,7 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
             </div>
           )}
         </div>
-        
+
         <div className="flex items-center space-x-2">
           {/* 페이지 네비게이션 */}
           <Button
@@ -213,7 +224,7 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
-          
+
           {/* 줌 컨트롤 */}
           <div className="flex items-center space-x-2 ml-4">
             <Button variant="ghost" size="sm" onClick={handleZoomOut}>
@@ -236,25 +247,33 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
               {Math.round(scale * 100)}%
             </span>
           </div>
-          
+
           {/* 회전 */}
-          <Button variant="ghost" size="sm" onClick={handleRotateCounterclockwise}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRotateCounterclockwise}
+          >
             <RotateCcw className="w-4 h-4" />
           </Button>
           <Button variant="ghost" size="sm" onClick={handleRotateClockwise}>
             <RotateCw className="w-4 h-4" />
           </Button>
-          
+
           {/* 다운로드 */}
           <Button variant="ghost" size="sm" onClick={handleDownload}>
             <Download className="w-4 h-4" />
           </Button>
-          
+
           {/* 전체화면 */}
           <Button variant="ghost" size="sm" onClick={toggleFullscreen}>
-            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            {isFullscreen ? (
+              <Minimize2 className="w-4 h-4" />
+            ) : (
+              <Maximize2 className="w-4 h-4" />
+            )}
           </Button>
-          
+
           {/* 닫기 */}
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="w-4 h-4" />
@@ -271,7 +290,7 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
             <div className="text-xs text-gray-500 mt-2">파일: {fileName}</div>
           </div>
         )}
-        
+
         {error && (
           <div className="text-center py-8">
             <div className="text-red-400 mb-4">{error}</div>
@@ -280,7 +299,7 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
             </div>
           </div>
         )}
-        
+
         {!loading && !error && (
           <div className="bg-white shadow-lg">
             <Document
@@ -288,14 +307,18 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
               options={options}
               onLoadSuccess={onDocumentLoadSuccess}
               onLoadError={onDocumentLoadError}
-              loading={<div className="text-gray-600 p-4">Document 로딩 중...</div>}
+              loading={
+                <div className="text-gray-600 p-4">Document 로딩 중...</div>
+              }
               error={<div className="text-red-600 p-4">Document 로드 실패</div>}
             >
               <Page
                 pageNumber={pageNumber}
                 scale={scale}
                 rotate={rotation}
-                loading={<div className="text-gray-600 p-4">페이지 로딩 중...</div>}
+                loading={
+                  <div className="text-gray-600 p-4">페이지 로딩 중...</div>
+                }
                 error={<div className="text-red-600 p-4">페이지 로드 실패</div>}
                 onLoadSuccess={onPageLoadSuccess}
                 onLoadError={onPageLoadError}
@@ -306,13 +329,11 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
           </div>
         )}
       </div>
-      
+
       {/* 하단 상태바 */}
       {numPages && (
         <div className="bg-gray-800 border-t border-gray-700 px-4 py-2 text-sm text-gray-400 flex justify-between items-center">
-          <div>
-            키보드 단축키: ← → (페이지), +/- (줌), R (회전), Esc (닫기)
-          </div>
+          <div>키보드 단축키: ← → (페이지), +/- (줌), R (회전), Esc (닫기)</div>
           <div>
             크기: {Math.round(scale * 100)}% | 회전: {rotation}°
           </div>

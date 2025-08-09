@@ -1,7 +1,15 @@
-"use client"
+'use client'
 
 import { useRef, useState, useEffect } from 'react'
-import { Play, Pause, Volume2, VolumeX, Maximize, SkipBack, SkipForward } from 'lucide-react'
+import {
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Maximize,
+  SkipBack,
+  SkipForward,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 
@@ -12,7 +20,11 @@ interface VideoPlayerProps {
   onNextVideo?: () => void
 }
 
-export default function VideoPlayer({ src, onPrevVideo, onNextVideo }: VideoPlayerProps) {
+export default function VideoPlayer({
+  src,
+  onPrevVideo,
+  onNextVideo,
+}: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -98,7 +110,10 @@ export default function VideoPlayer({ src, onPrevVideo, onNextVideo }: VideoPlay
     const video = videoRef.current
     if (!video) return
 
-    video.currentTime = Math.max(0, Math.min(duration, video.currentTime + seconds))
+    video.currentTime = Math.max(
+      0,
+      Math.min(duration, video.currentTime + seconds)
+    )
   }
 
   const formatTime = (time: number) => {
@@ -164,10 +179,19 @@ export default function VideoPlayer({ src, onPrevVideo, onNextVideo }: VideoPlay
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [togglePlay, skip, volume, handleVolumeChange, toggleMute, toggleFullscreen, onPrevVideo, onNextVideo])
+  }, [
+    togglePlay,
+    skip,
+    volume,
+    handleVolumeChange,
+    toggleMute,
+    toggleFullscreen,
+    onPrevVideo,
+    onNextVideo,
+  ])
 
   return (
-    <div 
+    <div
       className="relative bg-black rounded-lg overflow-hidden"
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => setShowControls(false)}
@@ -178,11 +202,13 @@ export default function VideoPlayer({ src, onPrevVideo, onNextVideo }: VideoPlay
         className="w-full aspect-video"
         onClick={togglePlay}
       />
-      
+
       {/* Controls Overlay */}
-      <div className={`absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent transition-opacity duration-300 ${
-        showControls ? 'opacity-100' : 'opacity-0'
-      }`}>
+      <div
+        className={`absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent transition-opacity duration-300 ${
+          showControls ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
         {/* Progress Bar */}
         <div className="absolute bottom-16 left-4 right-4">
           <Slider
@@ -203,9 +229,13 @@ export default function VideoPlayer({ src, onPrevVideo, onNextVideo }: VideoPlay
               onClick={togglePlay}
               className="text-white hover:bg-white/20"
             >
-              {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+              {isPlaying ? (
+                <Pause className="w-6 h-6" />
+              ) : (
+                <Play className="w-6 h-6" />
+              )}
             </Button>
-            
+
             <Button
               variant="ghost"
               size="icon"
@@ -214,7 +244,7 @@ export default function VideoPlayer({ src, onPrevVideo, onNextVideo }: VideoPlay
             >
               <SkipBack className="w-5 h-5" />
             </Button>
-            
+
             <Button
               variant="ghost"
               size="icon"
@@ -231,9 +261,13 @@ export default function VideoPlayer({ src, onPrevVideo, onNextVideo }: VideoPlay
                 onClick={toggleMute}
                 className="text-white hover:bg-white/20"
               >
-                {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                {isMuted ? (
+                  <VolumeX className="w-5 h-5" />
+                ) : (
+                  <Volume2 className="w-5 h-5" />
+                )}
               </Button>
-              
+
               <div className="w-20">
                 <Slider
                   value={[isMuted ? 0 : volume]}
@@ -250,7 +284,7 @@ export default function VideoPlayer({ src, onPrevVideo, onNextVideo }: VideoPlay
             <span className="text-sm">
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
-            
+
             <Button
               variant="ghost"
               size="icon"

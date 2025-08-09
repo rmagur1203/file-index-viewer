@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { Folder, File, Video, ImageIcon, Lock, FileText } from 'lucide-react'
 import Image from 'next/image'
@@ -35,7 +35,7 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     })
   }
 
@@ -85,8 +85,10 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
                             const parent = target.parentElement
                             if (parent) {
                               const icon = document.createElement('div')
-                              icon.className = 'w-full h-full flex items-center justify-center'
-                              icon.innerHTML = '<svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"></path></svg>'
+                              icon.className =
+                                'w-full h-full flex items-center justify-center'
+                              icon.innerHTML =
+                                '<svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"></path></svg>'
                               parent.appendChild(icon)
                             }
                           }}
@@ -108,8 +110,10 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
                             const parent = target.parentElement
                             if (parent) {
                               const icon = document.createElement('div')
-                              icon.className = 'w-full h-full flex items-center justify-center'
-                              icon.innerHTML = '<svg class="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path></svg>'
+                              icon.className =
+                                'w-full h-full flex items-center justify-center'
+                              icon.innerHTML =
+                                '<svg class="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path></svg>'
                               parent.appendChild(icon)
                             }
                           }}
@@ -123,13 +127,17 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
                   ) : (
                     <File className="w-5 h-5 text-gray-400 flex-shrink-0" />
                   )}
-                  <span 
+                  <span
                     className={`truncate ${file.accessDenied ? 'text-gray-500' : ''}`}
-                    title={file.accessDenied ? '권한이 필요한 파일입니다' : undefined}
+                    title={
+                      file.accessDenied ? '권한이 필요한 파일입니다' : undefined
+                    }
                   >
                     {file.name}
                     {file.accessDenied && (
-                      <span className="ml-2 text-xs text-red-400">(권한 필요)</span>
+                      <span className="ml-2 text-xs text-red-400">
+                        (권한 필요)
+                      </span>
                     )}
                   </span>
                 </div>

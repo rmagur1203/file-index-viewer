@@ -91,12 +91,12 @@
   .file-browser-container {
     flex-direction: column;
   }
-  
+
   .folder-tree {
     width: 100%;
     height: 200px;
   }
-  
+
   .sidebar {
     display: none;
   }
