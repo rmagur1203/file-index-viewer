@@ -5,6 +5,8 @@ import path from 'path'
 import { VIDEO_ROOT, THUMBNAIL_DIR } from '@/lib/config'
 import { safePath, sudoExists } from '@/lib/sudo-fs'
 
+export const dynamic = 'force-dynamic'
+
 // 썸네일 디렉토리가 없으면 생성
 async function ensureThumbnailDir() {
   try {

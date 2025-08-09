@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import {
   Play,
   Pause,
@@ -53,7 +53,7 @@ export default function VideoPlayer({
     }
   }, [])
 
-  const togglePlay = () => {
+  const togglePlay = useCallback(() => {
     const video = videoRef.current
     if (!video) return
 
@@ -62,7 +62,7 @@ export default function VideoPlayer({
     } else {
       video.play()
     }
-  }
+  }, [isPlaying])
 
   const handleSeek = (value: number[]) => {
     const video = videoRef.current
@@ -72,17 +72,20 @@ export default function VideoPlayer({
     setCurrentTime(value[0])
   }
 
-  const handleVolumeChange = (value: number[]) => {
-    const video = videoRef.current
-    if (!video) return
+  const handleVolumeChange = useCallback(
+    (value: number[]) => {
+      const video = videoRef.current
+      if (!video) return
 
-    const newVolume = value[0]
-    video.volume = newVolume
-    setVolume(newVolume)
-    setIsMuted(newVolume === 0)
-  }
+      const newVolume = value[0]
+      video.volume = newVolume
+      setVolume(newVolume)
+      setIsMuted(newVolume === 0)
+    },
+    [setVolume, setIsMuted]
+  )
 
-  const toggleMute = () => {
+  const toggleMute = useCallback(() => {
     const video = videoRef.current
     if (!video) return
 
@@ -93,9 +96,9 @@ export default function VideoPlayer({
       video.volume = 0
       setIsMuted(true)
     }
-  }
+  }, [isMuted, volume])
 
-  const toggleFullscreen = () => {
+  const toggleFullscreen = useCallback(() => {
     const video = videoRef.current
     if (!video) return
 
@@ -104,17 +107,20 @@ export default function VideoPlayer({
     } else {
       video.requestFullscreen()
     }
-  }
+  }, [])
 
-  const skip = (seconds: number) => {
-    const video = videoRef.current
-    if (!video) return
+  const skip = useCallback(
+    (seconds: number) => {
+      const video = videoRef.current
+      if (!video) return
 
-    video.currentTime = Math.max(
-      0,
-      Math.min(duration, video.currentTime + seconds)
-    )
-  }
+      video.currentTime = Math.max(
+        0,
+        Math.min(duration, video.currentTime + seconds)
+      )
+    },
+    [duration]
+  )
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60)

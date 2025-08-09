@@ -4,6 +4,8 @@ import { sudoStat, sudoReaddir, safePath } from '@/lib/sudo-fs'
 import { VIDEO_ROOT } from '@/lib/config'
 import { getMediaType } from '@/lib/utils'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)

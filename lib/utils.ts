@@ -46,11 +46,11 @@ export const isPdf = (fileName: string): boolean =>
 
 export const getMediaType = (
   fileName: string
-): 'video' | 'image' | 'pdf' | 'file' => {
+): 'video' | 'image' | 'pdf' | undefined => {
   if (isVideo(fileName)) return 'video'
   if (isImage(fileName)) return 'image'
   if (isPdf(fileName)) return 'pdf'
-  return 'file'
+  return undefined
 }
 
 export const getContentType = (filePath: string): string => {

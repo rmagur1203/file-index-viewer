@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { fetchFiles, fetchFolderTree } from '@/services/api'
-import type { FileItem, FolderTree } from '@/services/api'
+import type { FileItem, FolderTree } from '@/types'
 
 export type { FileItem, FolderTree }
 
-export const useFileBrowser = (initialPath = '/') => {
+export const useFileBrowser = (initialPath: string = '.') => {
   const [currentPath, setCurrentPath] = useState(initialPath)
   const [history, setHistory] = useState([initialPath])
   const [files, setFiles] = useState<FileItem[]>([])
@@ -66,7 +66,7 @@ export const useFileBrowser = (initialPath = '/') => {
     const parentPath = currentPath.split('/').slice(0, -1).join('/') || '/'
     navigateTo(parentPath)
   }
-  
+
   return {
     currentPath,
     files,

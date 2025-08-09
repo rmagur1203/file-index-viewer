@@ -69,6 +69,7 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
           console.error('❌ PDF 워커 파일 로드 오류:', error)
         })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {

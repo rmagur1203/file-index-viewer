@@ -1,4 +1,4 @@
-import { FileItem, FolderTree } from '@/hooks/useFileBrowser'
+import type { FileItem, FolderTree } from '@/types'
 
 const handleResponse = async (response: Response) => {
   const data = await response.json()

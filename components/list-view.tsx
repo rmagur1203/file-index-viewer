@@ -2,18 +2,7 @@
 
 import { Folder, File, Video, ImageIcon, Lock, FileText } from 'lucide-react'
 import Image from 'next/image'
-
-interface FileItem {
-  name: string
-  type: 'file' | 'directory'
-  size?: number
-  modified?: string
-  path: string
-  isVideo?: boolean
-  isImage?: boolean
-  isPdf?: boolean
-  accessDenied?: boolean
-}
+import type { FileItem } from '@/types'
 
 interface ListViewProps {
   files: FileItem[]
@@ -21,6 +10,23 @@ interface ListViewProps {
 }
 
 export default function ListView({ files, onFileClick }: ListViewProps) {
+  const getIcon = (file: FileItem) => {
+    if (file.type === 'directory') {
+      return <Folder className="w-5 h-5 text-yellow-500 flex-shrink-0" />
+    }
+
+    switch (file.mediaType) {
+      case 'video':
+        return <Video className="w-5 h-5 text-red-500 flex-shrink-0" />
+      case 'image':
+        return <ImageIcon className="w-5 h-5 text-blue-500 flex-shrink-0" />
+      case 'pdf':
+        return <FileText className="w-5 h-5 text-orange-500 flex-shrink-0" />
+      default:
+        return <File className="w-5 h-5 text-gray-400 flex-shrink-0" />
+    }
+  }
+
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return '-'
     const sizes = ['B', 'KB', 'MB', 'GB']
@@ -37,6 +43,50 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
       hour: '2-digit',
       minute: '2-digit',
     })
+  }
+
+  const renderIcon = (file: FileItem) => {
+    if (file.accessDenied) {
+      return <Lock className="w-4 h-4 text-red-400 flex-shrink-0" />
+    }
+    if (file.type === 'directory') {
+      return <Folder className="w-5 h-5 text-yellow-500 flex-shrink-0" />
+    }
+    if (file.mediaType === 'video' || file.mediaType === 'image') {
+      const isVideo = file.mediaType === 'video'
+      const thumbnailUrl = isVideo
+        ? `/api/thumbnail?path=${encodeURIComponent(file.path)}`
+        : `/api/media${file.path}`
+      return (
+        <div className="relative w-16 h-12 bg-gray-700 rounded overflow-hidden flex-shrink-0">
+          <Image
+            src={thumbnailUrl}
+            alt={`${file.name} preview`}
+            fill
+            className="object-cover"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement
+              target.style.display = 'none'
+              const parent = target.parentElement
+              if (parent) {
+                const icon = document.createElement('div')
+                icon.className =
+                  'w-full h-full flex items-center justify-center'
+                icon.innerHTML = isVideo
+                  ? '<svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"></path></svg>'
+                  : '<svg class="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path></svg>'
+                parent.appendChild(icon)
+              }
+            }}
+            unoptimized={!isVideo}
+          />
+        </div>
+      )
+    }
+    if (file.mediaType === 'pdf') {
+      return <FileText className="w-5 h-5 text-orange-500 flex-shrink-0" />
+    }
+    return <File className="w-5 h-5 text-gray-400 flex-shrink-0" />
   }
 
   return (
@@ -60,77 +110,11 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
             >
               <td className="p-3">
                 <div className="flex items-center gap-3">
-                  {file.accessDenied ? (
-                    <div className="flex items-center gap-2">
-                      <Lock className="w-4 h-4 text-red-400 flex-shrink-0" />
-                      {file.type === 'directory' ? (
-                        <Folder className="w-5 h-5 text-gray-500 flex-shrink-0" />
-                      ) : (
-                        <File className="w-5 h-5 text-gray-500 flex-shrink-0" />
-                      )}
-                    </div>
-                  ) : file.type === 'directory' ? (
-                    <Folder className="w-5 h-5 text-yellow-500 flex-shrink-0" />
-                  ) : file.isVideo ? (
-                    <div className="flex items-center gap-3">
-                      <div className="relative w-16 h-12 bg-gray-700 rounded overflow-hidden flex-shrink-0">
-                        <Image
-                          src={`/api/thumbnail?path=${encodeURIComponent(file.path)}`}
-                          alt={`${file.name} 썸네일`}
-                          fill
-                          className="object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement
-                            target.style.display = 'none'
-                            const parent = target.parentElement
-                            if (parent) {
-                              const icon = document.createElement('div')
-                              icon.className =
-                                'w-full h-full flex items-center justify-center'
-                              icon.innerHTML =
-                                '<svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"></path></svg>'
-                              parent.appendChild(icon)
-                            }
-                          }}
-                        />
-                      </div>
-                      <Video className="w-5 h-5 text-red-500 flex-shrink-0" />
-                    </div>
-                  ) : file.isImage ? (
-                    <div className="flex items-center gap-3">
-                      <div className="relative w-16 h-12 bg-gray-700 rounded overflow-hidden flex-shrink-0">
-                        <Image
-                          src={`/api/video${file.path}`}
-                          alt={`${file.name} 미리보기`}
-                          fill
-                          className="object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement
-                            target.style.display = 'none'
-                            const parent = target.parentElement
-                            if (parent) {
-                              const icon = document.createElement('div')
-                              icon.className =
-                                'w-full h-full flex items-center justify-center'
-                              icon.innerHTML =
-                                '<svg class="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path></svg>'
-                              parent.appendChild(icon)
-                            }
-                          }}
-                          unoptimized
-                        />
-                      </div>
-                      <ImageIcon className="w-5 h-5 text-blue-500 flex-shrink-0" />
-                    </div>
-                  ) : file.isPdf ? (
-                    <FileText className="w-5 h-5 text-orange-500 flex-shrink-0" />
-                  ) : (
-                    <File className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                  )}
+                  {renderIcon(file)}
                   <span
                     className={`truncate ${file.accessDenied ? 'text-gray-500' : ''}`}
                     title={
-                      file.accessDenied ? '권한이 필요한 파일입니다' : undefined
+                      file.accessDenied ? '권한이 필요한 파일입니다' : file.name
                     }
                   >
                     {file.name}
