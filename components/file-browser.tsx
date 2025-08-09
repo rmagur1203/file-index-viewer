@@ -58,12 +58,12 @@ export default function FileBrowser() {
     navigateToParent,
     canNavigateBack,
   } = useFileBrowser('/')
-  
+
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedMedia, setSelectedMedia] = useState<SelectedMedia | null>(null)
   const [renderPdfViewer, setRenderPdfViewer] = useState(false)
   const [viewMode, setViewMode] = useState<'list' | 'gallery'>('list')
-  
+
   useEffect(() => {
     if (selectedMedia?.type === 'pdf') {
       setRenderPdfViewer(false)
@@ -90,7 +90,7 @@ export default function FileBrowser() {
       })
     }
   }
-  
+
   const filteredFiles = files.filter((file) =>
     file.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -99,10 +99,10 @@ export default function FileBrowser() {
 
   return (
     <div className="flex h-screen bg-gray-900 text-white">
-      <FolderTreeComponent 
-        tree={folderTree} 
-        currentPath={currentPath} 
-        onNavigate={navigateTo} 
+      <FolderTreeComponent
+        tree={folderTree}
+        currentPath={currentPath}
+        onNavigate={navigateTo}
       />
 
       {/* Right Content Area */}
@@ -117,7 +117,7 @@ export default function FileBrowser() {
             onNavigateParent={navigateToParent}
             isRoot={currentPath === '/'}
           />
-          
+
           <Breadcrumb currentPath={currentPath} onNavigate={navigateTo} />
         </div>
 
@@ -151,19 +151,21 @@ export default function FileBrowser() {
           className={
             selectedMedia?.type === 'video'
               ? 'max-w-4xl w-full bg-gray-900 border-gray-700'
-              : 'max-w-[95vw] max-h-[95vh] w-full h-full bg-gray-900 border-gray-700 p-0'
+              : 'max-w-[95vw] max-h-[95vh] w-full h-full bg-gray-900 border-gray-700 p-0 [&>button]:hidden'
           }
         >
-          <DialogHeader>
-            <DialogTitle className="text-white">
-              {selectedMedia?.name}
-            </DialogTitle>
-          </DialogHeader>
           {selectedMedia?.type === 'video' && (
-            <VideoPlayer
-              src={`/api/media${selectedMedia.path}`}
-              onClose={() => setSelectedMedia(null)}
-            />
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-white truncate pr-10">
+                  {selectedMedia?.name}
+                </DialogTitle>
+              </DialogHeader>
+              <VideoPlayer
+                src={`/api/media${selectedMedia.path}`}
+                onClose={() => setSelectedMedia(null)}
+              />
+            </>
           )}
           {selectedMedia?.type === 'image' && (
             <ImageViewer
