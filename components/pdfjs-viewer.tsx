@@ -39,8 +39,8 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
   // PDF.js 워커 설정 및 초기화 (웹 검색 결과 기반)
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // 로컬 워커 파일 사용 (버전 호환성 확보)
-      pdfjs.GlobalWorkerOptions.workerSrc = '/pdfjs-dist/legacy/build/pdf.worker.min.js'
+      // 안정성을 위해 로컬 워커 경로 사용
+      pdfjs.GlobalWorkerOptions.workerSrc = '/pdfjs-dist/pdf.worker.min.mjs'
       
       console.log('🔧 PDF.js 초기화 완료')
       console.log('📄 PDF.js 버전:', pdfjs.version)
@@ -60,7 +60,7 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
           console.error('❌ PDF 워커 파일 로드 오류:', error)
         })
     }
-  }, [])
+  }, [src])
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     console.log('PDF 로드 성공:', numPages, '페이지')
@@ -174,7 +174,7 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
   }, [isFullscreen, onClose, handlePrevPage, handleNextPage, handleZoomIn, handleZoomOut, handleRotateClockwise, handleRotateCounterclockwise])
 
   return (
-    <div className={`relative bg-gray-900 text-white ${isFullscreen ? 'fixed inset-0 z-50' : 'h-full'}`}>
+    <div className={`relative bg-gray-900 text-white flex flex-col ${isFullscreen ? 'fixed inset-0 z-50' : 'h-full'}`}>
       {/* 상단 툴바 */}
       <div className="bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between">
         <div className="flex items-center space-x-4">

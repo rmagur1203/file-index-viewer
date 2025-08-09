@@ -9,14 +9,14 @@ import VideoPlayer from './video-player'
 import ImageViewer from './image-viewer'
 import dynamic from 'next/dynamic'
 
-// iframe 기반 PDF 뷰어 (안정적이고 빠른 해결책)
-const IframePdfViewer = dynamic(() => import('./iframe-pdf-viewer'), {
+// 웹 검색 결과에 따른 SSR 안전 PDF 뷰어 로드
+const PdfJsViewer = dynamic(() => import('./pdfjs-viewer'), {
   ssr: false,
   loading: () => (
     <div className="flex items-center justify-center h-64 text-gray-400">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-        <div>PDF 뷰어 로딩 중...</div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+        <div>PDF 뷰어 컴포넌트 로딩 중...</div>
       </div>
     </div>
   )
@@ -204,25 +204,25 @@ export default function FileBrowser() {
               </div>
             </div>
             
-              <div className="flex items-center gap-2 bg-gray-700 rounded-lg p-1">
-                <Toggle
-                  pressed={viewMode === 'list'}
-                  onPressedChange={() => setViewMode('list')}
-                  aria-label="리스트 뷰"
-                  className="data-[state=on]:bg-blue-600 data-[state=on]:text-white"
-                  size="sm"
-                >
-                  <List className="w-4 h-4" />
-                </Toggle>
-                <Toggle
-                  pressed={viewMode === 'gallery'}
-                  onPressedChange={() => setViewMode('gallery')}
-                  aria-label="갤러리 뷰"
-                  className="data-[state=on]:bg-blue-600 data-[state=on]:text-white"
-                  size="sm"
-                >
-                  <Grid className="w-4 h-4" />
-                </Toggle>
+            <div className="flex items-center gap-2 bg-gray-700 rounded-lg p-1">
+              <Toggle
+                pressed={viewMode === 'list'}
+                onPressedChange={() => setViewMode('list')}
+                aria-label="리스트 뷰"
+                className="data-[state=on]:bg-blue-600 data-[state=on]:text-white"
+                size="sm"
+              >
+                <List className="w-4 h-4" />
+              </Toggle>
+              <Toggle
+                pressed={viewMode === 'gallery'}
+                onPressedChange={() => setViewMode('gallery')}
+                aria-label="갤러리 뷰"
+                className="data-[state=on]:bg-blue-600 data-[state=on]:text-white"
+                size="sm"
+              >
+                <Grid className="w-4 h-4" />
+              </Toggle>
             </div>
           </div>
         </div>
@@ -308,10 +308,10 @@ export default function FileBrowser() {
 
     {/* PDF Viewer Modal */}
     <Dialog open={!!selectedPdf} onOpenChange={() => setSelectedPdf(null)}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full bg-gray-900 border-gray-700 p-0 [&>button]:hidden">
+      <DialogContent className="max-w-[95vw] w-full h-[95vh] bg-gray-900 border-gray-700 p-0 [&>button]:hidden">
         {selectedPdf && renderPdfViewer ? (
-          <IframePdfViewer
-            src={selectedPdf.path.startsWith('/test.pdf') ? '/test.pdf' : `/api/video${selectedPdf.path}`}
+          <PdfJsViewer
+            src={`/api/video${selectedPdf.path}`}
             fileName={selectedPdf.name}
             onClose={() => setSelectedPdf(null)}
           />
