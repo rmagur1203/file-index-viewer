@@ -130,7 +130,7 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
                 {file.type === 'directory' ? '-' : formatFileSize(file.size)}
               </td>
               <td className="p-3 text-muted-foreground text-sm">
-                {formatDate(file.modified)}
+                {formatDate(file.modifiedAt)}
               </td>
             </tr>
           ))}

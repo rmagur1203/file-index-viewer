@@ -3,6 +3,8 @@ import path from 'path'
 import { sudoReaddir } from '@/lib/sudo-fs'
 import { VIDEO_ROOT } from '@/lib/config'
 
+export const dynamic = 'force-dynamic'
+
 interface FolderTree {
   [key: string]: FolderTree
 }

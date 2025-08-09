@@ -76,6 +76,28 @@ export default function FileBrowser() {
   const [renderPdfViewer, setRenderPdfViewer] = useState(false)
   const [viewMode, setViewMode] = useState<'list' | 'gallery'>('list')
 
+  const handlePrevVideo = () => {
+    const videoFiles = files.filter((file) => file.mediaType === 'video')
+    const currentIndex = videoFiles.findIndex(
+      (file) => file.path === selectedMedia?.path
+    )
+    if (currentIndex > 0) {
+      const prevVideo = videoFiles[currentIndex - 1]
+      handleFileClick(prevVideo)
+    }
+  }
+
+  const handleNextVideo = () => {
+    const videoFiles = files.filter((file) => file.mediaType === 'video')
+    const currentIndex = videoFiles.findIndex(
+      (file) => file.path === selectedMedia?.path
+    )
+    if (currentIndex < videoFiles.length - 1) {
+      const nextVideo = videoFiles[currentIndex + 1]
+      handleFileClick(nextVideo)
+    }
+  }
+
   useEffect(() => {
     if (selectedMedia?.type === 'pdf') {
       setRenderPdfViewer(false)
@@ -179,6 +201,8 @@ export default function FileBrowser() {
               <VideoPlayer
                 src={`/api/media${selectedMedia.path}`}
                 onClose={() => setSelectedMedia(null)}
+                onPrevVideo={handlePrevVideo}
+                onNextVideo={handleNextVideo}
               />
             </>
           )}

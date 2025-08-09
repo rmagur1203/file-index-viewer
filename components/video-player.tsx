@@ -22,6 +22,7 @@ interface VideoPlayerProps {
 
 export default function VideoPlayer({
   src,
+  onClose,
   onPrevVideo,
   onNextVideo,
 }: VideoPlayerProps) {
@@ -131,6 +132,12 @@ export default function VideoPlayer({
   // 키보드 이벤트 핸들러
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // 추가: Esc 키로 닫기
+      if (e.key === 'Escape') {
+        onClose?.()
+        return
+      }
+
       // Ctrl 키와 방향키 조합으로 비디오 네비게이션
       if (e.ctrlKey) {
         switch (e.key) {
@@ -194,6 +201,7 @@ export default function VideoPlayer({
     toggleFullscreen,
     onPrevVideo,
     onNextVideo,
+    onClose,
   ])
 
   return (
