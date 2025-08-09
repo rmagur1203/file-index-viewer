@@ -308,7 +308,7 @@ export default function FileBrowser() {
 
     {/* PDF Viewer Modal */}
     <Dialog open={!!selectedPdf} onOpenChange={() => setSelectedPdf(null)}>
-      <DialogContent className="max-w-[95vw] w-full h-[95vh] bg-gray-900 border-gray-700 p-0 [&>button]:hidden">
+      <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full bg-gray-900 border-gray-700 p-0 [&>button]:hidden">
         {selectedPdf && renderPdfViewer ? (
           <PdfJsViewer
             src={`/api/video${selectedPdf.path}`}

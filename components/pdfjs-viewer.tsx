@@ -174,7 +174,7 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
   }, [isFullscreen, onClose, handlePrevPage, handleNextPage, handleZoomIn, handleZoomOut, handleRotateClockwise, handleRotateCounterclockwise])
 
   return (
-    <div className={`relative bg-gray-900 text-white flex flex-col ${isFullscreen ? 'fixed inset-0 z-50' : 'h-full'}`}>
+    <div className={`relative bg-gray-900 text-white flex flex-col min-h-0 ${isFullscreen ? 'fixed inset-0 z-50' : 'h-full'}`}>
       {/* 상단 툴바 */}
       <div className="bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between">
         <div className="flex items-center space-x-4">
@@ -254,7 +254,7 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
       </div>
 
       {/* PDF 콘텐츠 */}
-      <div className="flex-1 overflow-auto bg-gray-800 flex items-center justify-center p-4">
+      <div className="flex-1 min-h-0 bg-gray-800 flex items-center justify-center p-4">
         {loading && (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
