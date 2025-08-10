@@ -3,6 +3,7 @@
 import { Folder, Play, ImageIcon, FileText, File } from 'lucide-react'
 import Image from 'next/image'
 import type { FileItem } from '@/types'
+import { useSettings } from '@/contexts/SettingsContext'
 
 interface GalleryViewProps {
   files: FileItem[]
@@ -10,6 +11,21 @@ interface GalleryViewProps {
 }
 
 export default function GalleryView({ files, onFileClick }: GalleryViewProps) {
+  const { settings } = useSettings()
+
+  const getDisplayName = (file: FileItem) => {
+    if (file.type === 'directory' || settings.showFileExtensions) {
+      return file.name
+    }
+
+    // 확장자 제거
+    const lastDotIndex = file.name.lastIndexOf('.')
+    if (lastDotIndex > 0) {
+      return file.name.substring(0, lastDotIndex)
+    }
+    return file.name
+  }
+
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return ''
     const sizes = ['B', 'KB', 'MB', 'GB']
@@ -107,7 +123,7 @@ export default function GalleryView({ files, onFileClick }: GalleryViewProps) {
               className="text-sm font-medium text-white truncate"
               title={file.name}
             >
-              {file.name}
+              {getDisplayName(file)}
             </h3>
             {file.type === 'file' && (
               <p className="text-xs text-gray-400 mt-1">

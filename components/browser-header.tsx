@@ -1,10 +1,11 @@
 'use client'
 
-import { Search, List, Grid, ArrowLeft } from 'lucide-react'
+import { Search, List, Grid, ArrowLeft, Settings } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Toggle } from '@/components/ui/toggle'
 import { ThemeToggle } from './theme-toggle'
+import Link from 'next/link'
 
 type ViewMode = 'list' | 'gallery'
 
@@ -40,7 +41,7 @@ export function BrowserHeader({
         </Button>
       </div>
 
-      <div className="flex items-center gap-4 flex-1 max-w-2xl">
+      <div className="flex items-center gap-4 flex-1 justify-end">
         <div className="flex-1 max-w-md">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -74,7 +75,14 @@ export function BrowserHeader({
           </Toggle>
         </div>
 
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link href="/settings" passHref>
+            <Button variant="ghost" size="icon">
+              <Settings className="h-[1.2rem] w-[1.2rem]" />
+            </Button>
+          </Link>
+        </div>
       </div>
     </div>
   )

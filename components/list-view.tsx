@@ -3,6 +3,7 @@
 import { Folder, File, Video, ImageIcon, Lock, FileText } from 'lucide-react'
 import Image from 'next/image'
 import type { FileItem } from '@/types'
+import { useSettings } from '@/contexts/SettingsContext'
 
 interface ListViewProps {
   files: FileItem[]
@@ -10,6 +11,21 @@ interface ListViewProps {
 }
 
 export default function ListView({ files, onFileClick }: ListViewProps) {
+  const { settings } = useSettings()
+
+  const getDisplayName = (file: FileItem) => {
+    if (file.type === 'directory' || settings.showFileExtensions) {
+      return file.name
+    }
+
+    // 확장자 제거
+    const lastDotIndex = file.name.lastIndexOf('.')
+    if (lastDotIndex > 0) {
+      return file.name.substring(0, lastDotIndex)
+    }
+    return file.name
+  }
+
   const getIcon = (file: FileItem) => {
     if (file.type === 'directory') {
       return <Folder className="w-5 h-5 text-yellow-500 flex-shrink-0" />
@@ -117,7 +133,7 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
                       file.accessDenied ? '권한이 필요한 파일입니다' : file.name
                     }
                   >
-                    {file.name}
+                    {getDisplayName(file)}
                     {file.accessDenied && (
                       <span className="ml-2 text-xs text-red-400">
                         (권한 필요)

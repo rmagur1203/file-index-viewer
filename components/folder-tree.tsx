@@ -2,6 +2,7 @@
 
 import { Folder, Home } from 'lucide-react'
 import { FolderTree as FolderTreeData } from '@/hooks/useFileBrowser'
+import { useRouter, usePathname } from 'next/navigation'
 
 interface FolderTreeProps {
   tree: FolderTreeData
@@ -13,16 +14,27 @@ const renderTree = (
   tree: FolderTreeData,
   currentPath: string,
   onNavigate: (path: string) => void,
+  pathname: string,
+  router: any,
   basePath = ''
 ) => {
   return Object.entries(tree).map(([name, subtree]) => {
     const fullPath = basePath + '/' + name
     const isCurrentPath = fullPath === currentPath
 
+    const handleClick = () => {
+      // 설정 페이지나 다른 페이지에서 폴더를 클릭하면 메인 페이지로 이동
+      if (pathname !== '/') {
+        router.push(`/?path=${encodeURIComponent(fullPath)}`)
+      } else {
+        onNavigate(fullPath)
+      }
+    }
+
     return (
       <div key={fullPath} className="ml-4">
         <button
-          onClick={() => onNavigate(fullPath)}
+          onClick={handleClick}
           className={`flex items-center gap-2 p-1 rounded hover:bg-muted text-sm w-full text-left ${
             isCurrentPath ? 'bg-muted text-primary' : ''
           }`}
@@ -34,7 +46,14 @@ const renderTree = (
           subtree !== null &&
           Object.keys(subtree).length > 0 && (
             <div className="ml-2">
-              {renderTree(subtree, currentPath, onNavigate, fullPath)}
+              {renderTree(
+                subtree,
+                currentPath,
+                onNavigate,
+                pathname,
+                router,
+                fullPath
+              )}
             </div>
           )}
       </div>
@@ -43,6 +62,18 @@ const renderTree = (
 }
 
 export function FolderTree({ tree, currentPath, onNavigate }: FolderTreeProps) {
+  const router = useRouter()
+  const pathname = usePathname()
+
+  const handleRootClick = () => {
+    // 설정 페이지나 다른 페이지에서 루트를 클릭하면 메인 페이지로 이동
+    if (pathname !== '/') {
+      router.push('/?path=%2F')
+    } else {
+      onNavigate('/')
+    }
+  }
+
   return (
     <div className="w-1/4 min-w-[250px] bg-card border-r border-border overflow-y-auto hidden md:block">
       <div className="p-4 border-b border-border">
@@ -53,7 +84,7 @@ export function FolderTree({ tree, currentPath, onNavigate }: FolderTreeProps) {
       </div>
       <div className="p-2">
         <button
-          onClick={() => onNavigate('/')}
+          onClick={handleRootClick}
           className={`flex items-center gap-2 p-2 rounded hover:bg-muted text-sm w-full text-left ${
             currentPath === '/' ? 'bg-muted text-primary' : ''
           }`}
@@ -61,7 +92,7 @@ export function FolderTree({ tree, currentPath, onNavigate }: FolderTreeProps) {
           <Home className="w-4 h-4" />
           <span>루트</span>
         </button>
-        {renderTree(tree, currentPath, onNavigate)}
+        {renderTree(tree, currentPath, onNavigate, pathname, router)}
       </div>
     </div>
   )

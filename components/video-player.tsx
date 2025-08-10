@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
+import { useSettings } from '@/contexts/SettingsContext'
 
 interface VideoPlayerProps {
   src: string
@@ -26,13 +27,14 @@ export default function VideoPlayer({
   onPrevVideo,
   onNextVideo,
 }: VideoPlayerProps) {
+  const { settings } = useSettings()
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
-  const [volume, setVolume] = useState(1)
+  const [volume, setVolume] = useState(settings.videoVolume)
   const [isMuted, setIsMuted] = useState(false)
-  const [showControls, setShowControls] = useState(true)
+  const [showControls, setShowControls] = useState(settings.showVideoControls)
 
   useEffect(() => {
     const video = videoRef.current
@@ -41,18 +43,29 @@ export default function VideoPlayer({
     const updateTime = () => setCurrentTime(video.currentTime)
     const updateDuration = () => setDuration(video.duration)
 
+    const handleLoadedMetadata = () => {
+      setDuration(video.duration)
+      // 설정에 따라 자동 재생
+      if (settings.autoplayVideo) {
+        video.play().catch(console.error)
+      }
+    }
+
     video.addEventListener('timeupdate', updateTime)
-    video.addEventListener('loadedmetadata', updateDuration)
+    video.addEventListener('loadedmetadata', handleLoadedMetadata)
     video.addEventListener('play', () => setIsPlaying(true))
     video.addEventListener('pause', () => setIsPlaying(false))
 
+    // 초기 볼륨 설정
+    video.volume = settings.videoVolume
+
     return () => {
       video.removeEventListener('timeupdate', updateTime)
-      video.removeEventListener('loadedmetadata', updateDuration)
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata)
       video.removeEventListener('play', () => setIsPlaying(true))
       video.removeEventListener('pause', () => setIsPlaying(false))
     }
-  }, [])
+  }, [settings.autoplayVideo, settings.videoVolume])
 
   const togglePlay = useCallback(() => {
     const video = videoRef.current
@@ -217,114 +230,116 @@ export default function VideoPlayer({
       />
 
       {/* Controls Overlay */}
-      <div
-        className={`absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent transition-opacity duration-300 ${
-          showControls ? 'opacity-100' : 'opacity-0'
-        }`}
-      >
-        {/* Progress Bar */}
-        <div className="absolute bottom-16 left-4 right-4">
-          <Slider
-            value={[currentTime]}
-            max={duration || 100}
-            step={1}
-            onValueChange={handleSeek}
-            className="w-full [&>span:first-child]:h-1 [&>span:first-child]:bg-white/30 [&_[role=slider]]:bg-red-500 [&_[role=slider]]:w-3 [&_[role=slider]]:h-3 [&_[role=slider]]:border-0 [&>span:first-child_span]:bg-red-500"
-          />
-        </div>
+      {settings.showVideoControls && (
+        <div
+          className={`absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent transition-opacity duration-300 ${
+            showControls ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          {/* Progress Bar */}
+          <div className="absolute bottom-16 left-4 right-4">
+            <Slider
+              value={[currentTime]}
+              max={duration || 100}
+              step={1}
+              onValueChange={handleSeek}
+              className="w-full [&>span:first-child]:h-1 [&>span:first-child]:bg-white/30 [&_[role=slider]]:bg-red-500 [&_[role=slider]]:w-3 [&_[role=slider]]:h-3 [&_[role=slider]]:border-0 [&>span:first-child_span]:bg-red-500"
+            />
+          </div>
 
-        {/* Control Buttons */}
-        <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-white">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={togglePlay}
-              className="text-white hover:bg-white/20"
-            >
-              {isPlaying ? (
-                <Pause className="w-6 h-6" />
-              ) : (
-                <Play className="w-6 h-6" />
-              )}
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => skip(-10)}
-              className="text-white hover:bg-white/20"
-            >
-              <SkipBack className="w-5 h-5" />
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => skip(10)}
-              className="text-white hover:bg-white/20"
-            >
-              <SkipForward className="w-5 h-5" />
-            </Button>
-
-            <div className="flex items-center gap-2 ml-4">
+          {/* Control Buttons */}
+          <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-white">
+            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={toggleMute}
+                onClick={togglePlay}
                 className="text-white hover:bg-white/20"
               >
-                {isMuted ? (
-                  <VolumeX className="w-5 h-5" />
+                {isPlaying ? (
+                  <Pause className="w-6 h-6" />
                 ) : (
-                  <Volume2 className="w-5 h-5" />
+                  <Play className="w-6 h-6" />
                 )}
               </Button>
 
-              <div className="w-20">
-                <Slider
-                  value={[isMuted ? 0 : volume]}
-                  max={1}
-                  step={0.1}
-                  onValueChange={handleVolumeChange}
-                  className="[&>span:first-child]:h-1 [&>span:first-child]:bg-white/30 [&_[role=slider]]:bg-white [&_[role=slider]]:w-3 [&_[role=slider]]:h-3 [&_[role=slider]]:border-0 [&>span:first-child_span]:bg-white"
-                />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => skip(-10)}
+                className="text-white hover:bg-white/20"
+              >
+                <SkipBack className="w-5 h-5" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => skip(10)}
+                className="text-white hover:bg-white/20"
+              >
+                <SkipForward className="w-5 h-5" />
+              </Button>
+
+              <div className="flex items-center gap-2 ml-4">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleMute}
+                  className="text-white hover:bg-white/20"
+                >
+                  {isMuted ? (
+                    <VolumeX className="w-5 h-5" />
+                  ) : (
+                    <Volume2 className="w-5 h-5" />
+                  )}
+                </Button>
+
+                <div className="w-20">
+                  <Slider
+                    value={[isMuted ? 0 : volume]}
+                    max={1}
+                    step={0.1}
+                    onValueChange={handleVolumeChange}
+                    className="[&>span:first-child]:h-1 [&>span:first-child]:bg-white/30 [&_[role=slider]]:bg-white [&_[role=slider]]:w-3 [&_[role=slider]]:h-3 [&_[role=slider]]:border-0 [&>span:first-child_span]:bg-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <span className="text-sm">
+                {formatTime(currentTime)} / {formatTime(duration)}
+              </span>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleFullscreen}
+                className="text-white hover:bg-white/20"
+                title="전체화면 (F)"
+              >
+                <Maximize className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Keyboard Controls Info */}
+          <div className="absolute top-4 right-4 bg-black/60 rounded-lg p-3 text-white text-xs max-w-xs">
+            <div className="space-y-1">
+              <div className="font-semibold mb-2">키보드 컨트롤</div>
+              <div>스페이스: 재생/일시정지</div>
+              <div>← →: 5초 이동</div>
+              <div>↑ ↓: 볼륨 조절</div>
+              <div>M: 음소거</div>
+              <div>F: 전체화면</div>
+              <div className="border-t border-white/20 pt-2 mt-2">
+                <div>Ctrl + ← →: 이전/다음 영상</div>
               </div>
             </div>
           </div>
-
-          <div className="flex items-center gap-4">
-            <span className="text-sm">
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </span>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleFullscreen}
-              className="text-white hover:bg-white/20"
-              title="전체화면 (F)"
-            >
-              <Maximize className="w-5 h-5" />
-            </Button>
-          </div>
         </div>
-
-        {/* Keyboard Controls Info */}
-        <div className="absolute top-4 right-4 bg-black/60 rounded-lg p-3 text-white text-xs max-w-xs">
-          <div className="space-y-1">
-            <div className="font-semibold mb-2">키보드 컨트롤</div>
-            <div>스페이스: 재생/일시정지</div>
-            <div>← →: 5초 이동</div>
-            <div>↑ ↓: 볼륨 조절</div>
-            <div>M: 음소거</div>
-            <div>F: 전체화면</div>
-            <div className="border-t border-white/20 pt-2 mt-2">
-              <div>Ctrl + ← →: 이전/다음 영상</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   )
 }

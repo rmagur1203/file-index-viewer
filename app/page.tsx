@@ -1,12 +1,20 @@
+'use client'
+
 import FileBrowser from '@/components/file-browser'
-import { Suspense } from 'react'
+import { useFileBrowser } from '@/hooks/useFileBrowser'
+import { useBrowser } from '@/contexts/BrowserContext'
 
 export default function Home() {
+  const { files, loading, navigateTo } = useFileBrowser()
+  const { searchTerm, viewMode } = useBrowser()
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Suspense fallback={<div>Loading...</div>}>
-        <FileBrowser />
-      </Suspense>
-    </div>
+    <FileBrowser
+      files={files}
+      loading={loading}
+      navigateTo={navigateTo}
+      searchTerm={searchTerm}
+      viewMode={viewMode}
+    />
   )
 }

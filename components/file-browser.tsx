@@ -2,17 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import {
-  Search,
-  Folder,
-  ChevronRight,
-  Home,
-  ArrowLeft,
-  Grid,
-  List,
-} from 'lucide-react'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -21,13 +10,9 @@ import {
 import VideoPlayer from './video-player'
 import ImageViewer from './image-viewer'
 import dynamic from 'next/dynamic'
-import { Toggle } from '@/components/ui/toggle'
 import ListView from './list-view'
 import GalleryView from './gallery-view'
-import { useFileBrowser, FileItem, FolderTree } from '@/hooks/useFileBrowser'
-import { BrowserHeader } from './browser-header'
-import { FolderTree as FolderTreeComponent } from './folder-tree'
-import { Breadcrumb } from './breadcrumb'
+import { FileItem } from '@/hooks/useFileBrowser'
 
 // 웹 검색 결과에 따른 SSR 안전 PDF 뷰어 로드
 const PdfJsViewer = dynamic(() => import('./pdfjs-viewer'), {
@@ -60,21 +45,23 @@ interface SelectedMedia {
   type: 'video' | 'image' | 'pdf' | 'text'
 }
 
-export default function FileBrowser() {
-  const {
-    currentPath,
-    files,
-    loading,
-    folderTree,
-    navigateTo,
-    navigateToParent,
-    canNavigateBack,
-  } = useFileBrowser()
+interface FileBrowserProps {
+  files: FileItem[]
+  loading: boolean
+  navigateTo: (path: string) => void
+  searchTerm: string
+  viewMode: 'list' | 'gallery'
+}
 
-  const [searchTerm, setSearchTerm] = useState('')
+export default function FileBrowser({
+  files,
+  loading,
+  navigateTo,
+  searchTerm,
+  viewMode,
+}: FileBrowserProps) {
   const [selectedMedia, setSelectedMedia] = useState<SelectedMedia | null>(null)
   const [renderPdfViewer, setRenderPdfViewer] = useState(false)
-  const [viewMode, setViewMode] = useState<'list' | 'gallery'>('list')
 
   const handlePrevVideo = () => {
     const videoFiles = files.filter((file) => file.mediaType === 'video')
@@ -130,51 +117,22 @@ export default function FileBrowser() {
     file.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const pathSegments = currentPath.split('/').filter(Boolean)
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-muted-foreground">로딩 중...</div>
+      </div>
+    )
+  }
 
   return (
-    <div className="flex h-screen bg-background text-foreground">
-      <FolderTreeComponent
-        tree={folderTree}
-        currentPath={currentPath}
-        onNavigate={navigateTo}
-      />
-
-      {/* Right Content Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="bg-card border-b border-border p-4">
-          <BrowserHeader
-            searchTerm={searchTerm}
-            onSearchTermChange={setSearchTerm}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            onNavigateParent={navigateToParent}
-            isRoot={currentPath === '/'}
-          />
-
-          <Breadcrumb currentPath={currentPath} onNavigate={navigateTo} />
-        </div>
-
-        {/* File List */}
-        <div className="flex-1 overflow-y-auto">
-          {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="text-muted-foreground">로딩 중...</div>
-            </div>
-          ) : (
-            <div className={viewMode === 'list' ? 'p-4' : ''}>
-              {viewMode === 'list' ? (
-                <ListView files={filteredFiles} onFileClick={handleFileClick} />
-              ) : (
-                <GalleryView
-                  files={filteredFiles}
-                  onFileClick={handleFileClick}
-                />
-              )}
-            </div>
-          )}
-        </div>
+    <>
+      <div className={viewMode === 'list' ? 'p-4' : ''}>
+        {viewMode === 'list' ? (
+          <ListView files={filteredFiles} onFileClick={handleFileClick} />
+        ) : (
+          <GalleryView files={filteredFiles} onFileClick={handleFileClick} />
+        )}
       </div>
 
       {/* Media Viewer Modals */}
@@ -245,6 +203,6 @@ export default function FileBrowser() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   )
 }
