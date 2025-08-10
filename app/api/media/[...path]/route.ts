@@ -9,8 +9,9 @@ import iconv from 'iconv-lite'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params: _params }: { params: Promise<{ path: string[] }> }
 ) {
+  const params = await _params
   try {
     const requestedPath = params.path.join('/')
     const fullPath = safePath(VIDEO_ROOT, requestedPath)

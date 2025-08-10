@@ -69,7 +69,7 @@ export default function FileBrowser() {
     navigateTo,
     navigateToParent,
     canNavigateBack,
-  } = useFileBrowser('/')
+  } = useFileBrowser()
 
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedMedia, setSelectedMedia] = useState<SelectedMedia | null>(null)

@@ -1,14 +1,18 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useQueryState } from 'nuqs'
 import { fetchFiles, fetchFolderTree } from '@/services/api'
 import type { FileItem, FolderTree } from '@/types'
 
 export type { FileItem, FolderTree }
 
-export const useFileBrowser = (initialPath: string = '.') => {
-  const [currentPath, setCurrentPath] = useState(initialPath)
-  const [history, setHistory] = useState([initialPath])
+export const useFileBrowser = (initialPath: string = '/') => {
+  const [currentPath, setCurrentPath] = useQueryState('path', {
+    defaultValue: initialPath,
+  })
+  const [history, setHistory] = useState([currentPath])
+
   const [files, setFiles] = useState<FileItem[]>([])
   const [loading, setLoading] = useState(true)
   const [folderTree, setFolderTree] = useState<FolderTree>({})
@@ -21,7 +25,6 @@ export const useFileBrowser = (initialPath: string = '.') => {
     } catch (error) {
       console.error('Error fetching files:', error)
       setFiles([])
-      // TODO: 사용자에게 오류를 표시하는 기능 추가
     } finally {
       setLoading(false)
     }
@@ -47,8 +50,9 @@ export const useFileBrowser = (initialPath: string = '.') => {
 
   const navigateTo = (path: string) => {
     if (path !== currentPath) {
-      setCurrentPath(path)
-      setHistory((prev) => [...prev, path])
+      setCurrentPath(path).then(() => {
+        setHistory((prev) => [...prev, path])
+      })
     }
   }
 
@@ -57,8 +61,9 @@ export const useFileBrowser = (initialPath: string = '.') => {
       const newHistory = [...history]
       newHistory.pop()
       const previousPath = newHistory[newHistory.length - 1]
-      setHistory(newHistory)
-      setCurrentPath(previousPath)
+      setCurrentPath(previousPath).then(() => {
+        setHistory(newHistory)
+      })
     }
   }
 
