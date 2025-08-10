@@ -13,6 +13,20 @@ interface GalleryViewProps {
 export default function GalleryView({ files, onFileClick }: GalleryViewProps) {
   const { settings } = useSettings()
 
+  // 썸네일 크기에 따른 그리드 컬럼 수 설정
+  const getGridColumns = () => {
+    switch (settings.thumbnailSize) {
+      case 'small':
+        return 'grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10'
+      case 'medium':
+        return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+      case 'large':
+        return 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4'
+      default:
+        return 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+    }
+  }
+
   const getDisplayName = (file: FileItem) => {
     if (file.type === 'directory' || settings.showFileExtensions) {
       return file.name
@@ -108,7 +122,7 @@ export default function GalleryView({ files, onFileClick }: GalleryViewProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-4">
+    <div className={`grid ${getGridColumns()} gap-4 p-4`}>
       {files.map((file) => (
         <div
           key={file.path}

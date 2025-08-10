@@ -13,6 +13,20 @@ interface ListViewProps {
 export default function ListView({ files, onFileClick }: ListViewProps) {
   const { settings } = useSettings()
 
+  // 썸네일 크기에 따른 이미지 크기 설정
+  const getThumbnailSize = () => {
+    switch (settings.thumbnailSize) {
+      case 'small':
+        return 'w-12 h-9'
+      case 'medium':
+        return 'w-16 h-12'
+      case 'large':
+        return 'w-20 h-16'
+      default:
+        return 'w-16 h-12'
+    }
+  }
+
   const getDisplayName = (file: FileItem) => {
     if (file.type === 'directory' || settings.showFileExtensions) {
       return file.name
@@ -74,7 +88,9 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
         ? `/api/thumbnail?path=${encodeURIComponent(file.path)}`
         : `/api/media${file.path}`
       return (
-        <div className="relative w-16 h-12 bg-muted rounded overflow-hidden flex-shrink-0">
+        <div
+          className={`relative ${getThumbnailSize()} bg-muted rounded overflow-hidden flex-shrink-0`}
+        >
           <Image
             src={thumbnailUrl}
             alt={`${file.name} preview`}
