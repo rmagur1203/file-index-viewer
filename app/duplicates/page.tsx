@@ -11,7 +11,6 @@ import { Slider } from '@/components/ui/slider'
 import {
   Search,
   Trash2,
-  FileVideo,
   HardDrive,
   Users,
   AlertTriangle,
@@ -334,6 +333,7 @@ function DuplicateGroupCard({
 }: DuplicateGroupCardProps) {
   // 대표 이미지 선택 (첫 번째 파일)
   const representativeFile = group.files[0]
+  const [imageError, setImageError] = useState(false)
 
   return (
     <Card>
@@ -342,21 +342,47 @@ function DuplicateGroupCard({
           <div className="flex items-center gap-4">
             {/* 대표 이미지 미리보기 */}
             <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
-              {group.type === 'image' ? (
+              {!imageError ? (
                 <Image
-                  src={`/api/media${encodeURI(representativeFile.relativePath)}`}
+                  src={
+                    group.type === 'image'
+                      ? `/api/media${encodeURI(representativeFile.relativePath)}`
+                      : `/api/thumbnail?path=${encodeURIComponent(representativeFile.relativePath)}`
+                  }
                   alt={representativeFile.name}
                   width={64}
                   height={64}
                   className="object-cover w-full h-full"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement
-                    target.style.display = 'none'
-                    target.parentElement!.innerHTML = `<div class="flex items-center justify-center w-full h-full"><svg class="w-8 h-8 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path></svg></div>`
-                  }}
+                  onError={() => setImageError(true)}
                 />
               ) : (
-                <FileVideo className="w-8 h-8 text-purple-500" />
+                <div className="flex items-center justify-center w-full h-full">
+                  {group.type === 'image' ? (
+                    <svg
+                      className="w-8 h-8 text-muted-foreground"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                        clipRule="evenodd"
+                      ></path>
+                    </svg>
+                  ) : (
+                    <svg
+                      className="w-8 h-8 text-purple-500"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"
+                        clipRule="evenodd"
+                      ></path>
+                    </svg>
+                  )}
+                </div>
               )}
             </div>
 
@@ -410,6 +436,8 @@ function DuplicateFileCard({
   isSelected,
   onToggleSelection,
 }: DuplicateFileCardProps) {
+  const [imageError, setImageError] = useState(false)
+
   return (
     <div
       className={`border rounded-lg p-4 cursor-pointer transition-colors ${
@@ -421,23 +449,54 @@ function DuplicateFileCard({
     >
       {/* 썸네일 또는 아이콘 */}
       <div className="aspect-video bg-muted rounded mb-3 flex items-center justify-center overflow-hidden">
-        {group.type === 'image' ? (
+        {!imageError ? (
           <Image
-            src={`/api/media${encodeURI(file.relativePath)}`}
+            src={
+              group.type === 'image'
+                ? `/api/media${encodeURI(file.relativePath)}`
+                : `/api/thumbnail?path=${encodeURIComponent(file.relativePath)}`
+            }
             alt={file.name}
             width={200}
             height={150}
             className="object-cover w-full h-full"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement
-              target.style.display = 'none'
-              target.parentElement!.innerHTML = `<div class="flex items-center justify-center w-full h-full text-center"><svg class="w-12 h-12 text-muted-foreground mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path></svg><p class="text-xs text-muted-foreground">이미지 로드 실패</p></div>`
-            }}
+            onError={() => setImageError(true)}
           />
         ) : (
-          <div className="text-center">
-            <FileVideo className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-            <p className="text-xs text-muted-foreground">동영상 미리보기</p>
+          <div className="flex flex-col items-center justify-center w-full h-full text-center">
+            {group.type === 'image' ? (
+              <>
+                <svg
+                  className="w-12 h-12 text-muted-foreground mb-2"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                    clipRule="evenodd"
+                  ></path>
+                </svg>
+                <p className="text-xs text-muted-foreground">
+                  이미지 로드 실패
+                </p>
+              </>
+            ) : (
+              <>
+                <svg
+                  className="w-12 h-12 text-purple-500 mb-2"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"
+                    clipRule="evenodd"
+                  ></path>
+                </svg>
+                <p className="text-xs text-muted-foreground">동영상 썸네일</p>
+              </>
+            )}
           </div>
         )}
       </div>
