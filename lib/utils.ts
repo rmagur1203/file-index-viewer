@@ -175,3 +175,19 @@ export const getContentType = (filePath: string): string => {
 
 export const isMediaFile = (fileName: string): boolean =>
   hasExtension(fileName, allExtensions)
+
+/**
+ * 파일 크기를 읽기 쉬운 형태로 포맷합니다
+ */
+export function formatFileSize(bytes: number): string {
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  let size = bytes
+  let unitIndex = 0
+
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024
+    unitIndex++
+  }
+
+  return `${size.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`
+}

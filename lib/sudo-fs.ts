@@ -108,6 +108,28 @@ export async function sudoExists(filePath: string): Promise<boolean> {
 }
 
 /**
+ * 일반 권한으로 파일을 읽고, 실패하면 sudo를 사용
+ */
+export async function sudoReadFile(filePath: string): Promise<Buffer> {
+  try {
+    // 먼저 일반 권한으로 시도
+    return await fs.readFile(filePath)
+  } catch (error: unknown) {
+    const nodeError = error as NodeJS.ErrnoException
+    if (nodeError.code === 'EACCES' || nodeError.code === 'EPERM') {
+      // 권한 문제인 경우 sudo 사용
+      try {
+        const { stdout } = await execAsync(`sudo cat "${filePath}" | base64`)
+        return Buffer.from(stdout.trim(), 'base64')
+      } catch (sudoError) {
+        throw new Error(`Cannot read file ${filePath}: ${sudoError}`)
+      }
+    }
+    throw error
+  }
+}
+
+/**
  * 안전한 경로 결합 (보안: 상위 디렉토리 접근 방지)
  */
 export function safePath(basePath: string, relativePath: string): string {
