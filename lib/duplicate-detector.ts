@@ -101,9 +101,41 @@ export function hammingDistanceToSimilarity(
  * 디렉토리를 재귀적으로 스캔하여 모든 이미지와 비디오 파일을 찾습니다
  */
 export async function scanMediaFiles(
-  dirPath: string
+  dirPath: string,
+  progressCallback?: (step: string, current: number, total: number) => void
 ): Promise<DuplicateFile[]> {
   const files: DuplicateFile[] = []
+  let processedFiles = 0
+  let totalFilesEstimate = 0
+
+  // 먼저 총 파일 수를 추정
+  async function countFiles(currentPath: string): Promise<number> {
+    let count = 0
+    try {
+      const entries = await fs.readdir(currentPath, { withFileTypes: true })
+      for (const entry of entries) {
+        const entryPath = path.join(currentPath, entry.name)
+        if (entry.isDirectory()) {
+          count += await countFiles(entryPath)
+        } else if (
+          entry.isFile() &&
+          (isImage(entry.name) || isVideo(entry.name))
+        ) {
+          count++
+        }
+      }
+    } catch (error) {
+      console.warn(`Failed to count files in ${currentPath}:`, error)
+    }
+    return count
+  }
+
+  // 총 파일 수 계산
+  if (progressCallback) {
+    progressCallback('파일 개수 계산 중', 0, 0)
+    totalFilesEstimate = await countFiles(dirPath)
+    progressCallback('파일 스캔 시작', 0, totalFilesEstimate)
+  }
 
   async function scanDir(currentPath: string) {
     try {
@@ -151,8 +183,26 @@ export async function scanMediaFiles(
             }
 
             files.push(file)
+            processedFiles++
+
+            // 프로그래스 업데이트
+            if (progressCallback && totalFilesEstimate > 0) {
+              progressCallback(
+                `파일 처리 중: ${entry.name}`,
+                processedFiles,
+                totalFilesEstimate
+              )
+            }
           } catch (error) {
             console.warn(`Skipping file ${entryPath}:`, error)
+            processedFiles++
+            if (progressCallback && totalFilesEstimate > 0) {
+              progressCallback(
+                `파일 처리 중`,
+                processedFiles,
+                totalFilesEstimate
+              )
+            }
           }
         }
       }
@@ -162,6 +212,11 @@ export async function scanMediaFiles(
   }
 
   await scanDir(dirPath)
+
+  if (progressCallback) {
+    progressCallback('파일 스캔 완료', totalFilesEstimate, totalFilesEstimate)
+  }
+
   return files
 }
 

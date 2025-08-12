@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
+import { Progress } from '@/components/ui/progress'
 import {
   Search,
   Trash2,
@@ -44,21 +45,84 @@ export default function DuplicatesPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
 
+  // 프로그래스 상태
+  const [scanProgress, setScanProgress] = useState(0)
+  const [scanStep, setScanStep] = useState('')
+  const [scanMessage, setScanMessage] = useState('')
+
   const startScan = async () => {
     setIsScanning(true)
+    setScanProgress(0)
+    setScanStep('')
+    setScanMessage('')
+    setScanResult(null)
+    setSelectedFiles(new Set())
+
     try {
-      const response = await fetch(
-        `/api/duplicates?threshold=${similarityThreshold[0]}`
+      const eventSource = new EventSource(
+        `/api/duplicates/progress?threshold=${similarityThreshold[0]}`
       )
-      if (response.ok) {
-        const result: ScanResult = await response.json()
-        setScanResult(result)
-      } else {
-        console.error('Failed to scan for duplicates')
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+
+          setScanStep(data.step)
+          setScanProgress(data.progress || 0)
+          setScanMessage(data.message || '')
+
+          // 스캔 완료시 결과 처리
+          if (data.step === 'completed' && data.result) {
+            const groups = data.result.groups || []
+            const stats: DuplicateStats = {
+              totalFiles: data.result.totalFiles || 0,
+              totalGroups: groups.length,
+              totalDuplicates: data.result.duplicateFiles || 0,
+              totalWastedSpace: groups.reduce(
+                (sum: number, group: DuplicateGroup) => {
+                  // 각 그룹에서 가장 작은 파일을 제외한 나머지 크기 합계
+                  const sortedFiles = [...group.files].sort(
+                    (a, b) => a.size - b.size
+                  )
+                  return (
+                    sum +
+                    sortedFiles
+                      .slice(1)
+                      .reduce((groupSum, file) => groupSum + file.size, 0)
+                  )
+                },
+                0
+              ),
+              imageGroups: groups.filter(
+                (g: DuplicateGroup) => g.type === 'image'
+              ).length,
+              videoGroups: groups.filter(
+                (g: DuplicateGroup) => g.type === 'video'
+              ).length,
+            }
+
+            setScanResult({ groups, stats })
+            eventSource.close()
+          } else if (data.step === 'error') {
+            console.error('Scan error:', data.message)
+            eventSource.close()
+          }
+        } catch (error) {
+          console.error('Error parsing SSE data:', error)
+        }
       }
+
+      eventSource.onerror = (error) => {
+        console.error('SSE connection error:', error)
+        eventSource.close()
+        setIsScanning(false)
+      }
+
+      eventSource.addEventListener('close', () => {
+        setIsScanning(false)
+      })
     } catch (error) {
-      console.error('Error scanning for duplicates:', error)
-    } finally {
+      console.error('Error starting scan:', error)
       setIsScanning(false)
     }
   }
@@ -181,6 +245,29 @@ export default function DuplicatesPage() {
         </div>
       </div>
 
+      {/* 프로그래스 바 */}
+      {isScanning && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">스캔 진행 상황</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>{scanMessage || '준비 중...'}</span>
+                <span>{scanProgress}%</span>
+              </div>
+              <Progress value={scanProgress} className="w-full" />
+            </div>
+            {scanStep && (
+              <div className="text-sm text-muted-foreground">
+                현재 단계: {scanStep}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* 통계 카드 */}
       {scanResult && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -302,8 +389,8 @@ export default function DuplicatesPage() {
               중복 파일 스캔을 시작하세요
             </h3>
             <p className="text-muted-foreground mb-4">
-              상단의 "중복 스캔" 버튼을 클릭하여 중복된 이미지와 동영상을
-              찾아보세요.
+              상단의 &ldquo;중복 스캔&rdquo; 버튼을 클릭하여 중복된 이미지와
+              동영상을 찾아보세요.
             </p>
             <Button onClick={startScan}>
               <Search className="w-4 h-4 mr-2" />
