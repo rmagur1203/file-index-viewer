@@ -1,6 +1,14 @@
 'use client'
 
-import { Search, List, Grid, ArrowLeft, Settings, Copy } from 'lucide-react'
+import {
+  Search,
+  List,
+  Grid,
+  ArrowLeft,
+  Settings,
+  Copy,
+  Brain,
+} from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Toggle } from '@/components/ui/toggle'
@@ -77,6 +85,11 @@ export function BrowserHeader({
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
+          <Link href="/ai-recommendations" passHref>
+            <Button variant="ghost" size="icon" title="AI 파일 추천">
+              <Brain className="h-[1.2rem] w-[1.2rem]" />
+            </Button>
+          </Link>
           <Link href="/duplicates" passHref>
             <Button variant="ghost" size="icon" title="중복 파일 관리">
               <Copy className="h-[1.2rem] w-[1.2rem]" />
