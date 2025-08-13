@@ -6,8 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Slider } from '@/components/ui/slider'
 import { Progress } from '@/components/ui/progress'
 import {
   Search,
@@ -19,29 +17,32 @@ import {
   Eye,
   Trash,
 } from 'lucide-react'
-import type { DuplicateGroup, DuplicateFile } from '@/types'
+import type {
+  DuplicateGroup,
+  DuplicateFile,
+  DuplicateStats,
+  SimilarityThresholds,
+} from '@/types'
 import { formatFileSize } from '@/lib/utils'
+import {
+  DEFAULT_THRESHOLDS,
+  serializeThresholds,
+} from '@/lib/threshold-presets'
+import { ThresholdSettings } from '@/components/threshold-settings'
 import Image from 'next/image'
-
-interface DuplicateStats {
-  totalFiles: number
-  totalGroups: number
-  totalDuplicates: number
-  totalWastedSpace: number
-  imageGroups: number
-  videoGroups: number
-}
 
 interface ScanResult {
   groups: DuplicateGroup[]
   stats: DuplicateStats
+  thresholds?: SimilarityThresholds
 }
 
 export default function DuplicatesPage() {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null)
   const [isScanning, setIsScanning] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set())
-  const [similarityThreshold, setSimilarityThreshold] = useState([90])
+  const [thresholds, setThresholds] =
+    useState<SimilarityThresholds>(DEFAULT_THRESHOLDS)
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
 
@@ -59,8 +60,10 @@ export default function DuplicatesPage() {
     setSelectedFiles(new Set())
 
     try {
+      // 임계값을 URL 파라미터로 직렬화
+      const params = new URLSearchParams(serializeThresholds(thresholds))
       const eventSource = new EventSource(
-        `/api/duplicates/progress?threshold=${similarityThreshold[0]}`
+        `/api/duplicates/progress?${params.toString()}`
       )
 
       eventSource.onmessage = (event) => {
@@ -74,6 +77,7 @@ export default function DuplicatesPage() {
           // 스캔 완료시 결과 처리
           if (data.step === 'completed' && data.result) {
             const groups = data.result.groups || []
+            const usedThresholds = data.result.thresholds || thresholds
             const stats: DuplicateStats = {
               totalFiles: data.result.totalFiles || 0,
               totalGroups: groups.length,
@@ -101,10 +105,12 @@ export default function DuplicatesPage() {
               ).length,
             }
 
-            setScanResult({ groups, stats })
+            setScanResult({ groups, stats, thresholds: usedThresholds })
+            setIsScanning(false)
             eventSource.close()
           } else if (data.step === 'error') {
             console.error('Scan error:', data.message)
+            setIsScanning(false)
             eventSource.close()
           }
         } catch (error) {
@@ -207,43 +213,31 @@ export default function DuplicatesPage() {
             이미지와 동영상의 중복 파일을 찾아 관리합니다
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="threshold">유사도 임계값:</Label>
-            <div className="w-32">
-              <Slider
-                id="threshold"
-                value={similarityThreshold}
-                onValueChange={setSimilarityThreshold}
-                min={70}
-                max={100}
-                step={5}
-                className="w-full"
-              />
-            </div>
-            <span className="text-sm text-muted-foreground">
-              {similarityThreshold[0]}%
-            </span>
-          </div>
-          <Button
-            onClick={startScan}
-            disabled={isScanning}
-            className="min-w-[120px]"
-          >
-            {isScanning ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                스캔 중...
-              </>
-            ) : (
-              <>
-                <Search className="w-4 h-4 mr-2" />
-                중복 스캔
-              </>
-            )}
-          </Button>
-        </div>
+        <Button
+          onClick={startScan}
+          disabled={isScanning}
+          className="min-w-[120px]"
+        >
+          {isScanning ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              스캔 중...
+            </>
+          ) : (
+            <>
+              <Search className="w-4 h-4 mr-2" />
+              중복 스캔
+            </>
+          )}
+        </Button>
       </div>
+
+      {/* 임계값 설정 */}
+      <ThresholdSettings
+        thresholds={thresholds}
+        onThresholdsChange={setThresholds}
+        className="mb-6"
+      />
 
       {/* 프로그래스 바 */}
       {isScanning && (

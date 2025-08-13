@@ -42,3 +42,4 @@ next-env.d.ts
 /public/thumbnails
 /public/pdfjs-dist
 /public/cmaps
+/tmp
