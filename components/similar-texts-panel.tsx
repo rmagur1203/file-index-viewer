@@ -28,7 +28,7 @@ interface SimilarTextsPanelProps {
   filePath: string
   open: boolean
   onOpenChange: (open: boolean) => void
-  onTextSelect: (directory: string, fileName: string) => void
+  onTextSelect: (textPath: string) => void
 }
 
 export const SimilarTextsPanel: React.FC<SimilarTextsPanelProps> = ({
@@ -71,9 +71,7 @@ export const SimilarTextsPanel: React.FC<SimilarTextsPanelProps> = ({
   }, [open, findSimilar])
 
   const handleTextClick = (filePath: string) => {
-    const directory = path.dirname(filePath)
-    const fileName = path.basename(filePath)
-    onTextSelect(directory, fileName)
+    onTextSelect(filePath)
     onOpenChange(false)
   }
 

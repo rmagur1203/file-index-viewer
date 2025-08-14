@@ -28,7 +28,7 @@ interface SimilarVideosPanelProps {
   filePath: string
   open: boolean
   onOpenChange: (open: boolean) => void
-  onVideoSelect: (directory: string, fileName: string) => void
+  onVideoSelect: (videoPath: string) => void
 }
 
 export const SimilarVideosPanel: React.FC<SimilarVideosPanelProps> = ({
@@ -71,9 +71,7 @@ export const SimilarVideosPanel: React.FC<SimilarVideosPanelProps> = ({
   }, [open, findSimilar])
 
   const handleVideoClick = (filePath: string) => {
-    const directory = path.dirname(filePath)
-    const fileName = path.basename(filePath)
-    onVideoSelect(directory, fileName)
+    onVideoSelect(filePath)
     onOpenChange(false)
   }
 

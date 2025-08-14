@@ -277,21 +277,27 @@ export default function FileBrowser({
       {showSimilarImages && similarImageQuery && (
         <SimilarImagesPanel
           filePath={similarImageQuery}
-          onClose={() => {
-            setShowSimilarImages(false)
-            setSimilarImageQuery(null)
+          open={showSimilarImages}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) {
+              setShowSimilarImages(false)
+              setSimilarImageQuery(null)
+            }
           }}
-          onImageClick={handleSimilarImageSelect}
+          onImageSelect={handleSimilarImageSelect}
         />
       )}
       {showSimilarVideos && similarVideoQuery && (
         <SimilarVideosPanel
           filePath={similarVideoQuery}
-          onClose={() => {
-            setShowSimilarVideos(false)
-            setSimilarVideoQuery(null)
+          open={showSimilarVideos}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) {
+              setShowSimilarVideos(false)
+              setSimilarVideoQuery(null)
+            }
           }}
-          onVideoClick={(videoPath) => {
+          onVideoSelect={(videoPath) => {
             setShowSimilarVideos(false)
             setSimilarVideoQuery(null)
             setSelectedMedia({
@@ -306,16 +312,21 @@ export default function FileBrowser({
       {showSimilarTexts && similarTextQuery && (
         <SimilarTextsPanel
           filePath={similarTextQuery}
-          onClose={() => {
-            setShowSimilarTexts(false)
-            setSimilarTextQuery(null)
+          open={showSimilarTexts}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) {
+              setShowSimilarTexts(false)
+              setSimilarTextQuery(null)
+            }
           }}
-          onFileClick={(textPath) => {
+          onTextSelect={(textPath) => {
             setShowSimilarTexts(false)
             setSimilarTextQuery(null)
+            const directory = textPath.substring(0, textPath.lastIndexOf('/'))
+            const fileName = textPath.substring(textPath.lastIndexOf('/') + 1)
             setSelectedMedia({
               path: textPath,
-              name: textPath.split('/').pop() || textPath,
+              name: fileName,
               type: 'text',
               filePath: textPath,
             })

@@ -28,7 +28,7 @@ interface SimilarImagesPanelProps {
   filePath: string
   open: boolean
   onOpenChange: (open: boolean) => void
-  onImageSelect: (directory: string, fileName: string) => void
+  onImageSelect: (imagePath: string) => void
 }
 
 export const SimilarImagesPanel: React.FC<SimilarImagesPanelProps> = ({
@@ -71,9 +71,7 @@ export const SimilarImagesPanel: React.FC<SimilarImagesPanelProps> = ({
   }, [open, findSimilar])
 
   const handleImageClick = (filePath: string) => {
-    const directory = path.dirname(filePath)
-    const fileName = path.basename(filePath)
-    onImageSelect(directory, fileName)
+    onImageSelect(filePath)
     onOpenChange(false)
   }
 
