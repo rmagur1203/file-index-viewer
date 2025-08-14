@@ -100,9 +100,18 @@ export class AITextAnalyzer {
 
       if (ext === '.pdf') {
         const dataBuffer = await fs.readFile(filePath)
-        const { default: pdf } = await import('pdf-parse')
-        const data = await pdf(dataBuffer)
-        content = data.text
+        // 1차 시도: pdf-parse 사용
+        try {
+          const { default: pdf } = await import('pdf-parse')
+          const data = await pdf(dataBuffer)
+          content = data.text
+        } catch (pdfParseError) {
+          // pdf-parse가 런타임에 테스트 파일을 참조하는 등 ENOENT 오류가 발생할 경우 폴백
+          console.warn(
+            `⚠️ pdf-parse failed, falling back to pdfjs-dist: ${pdfParseError instanceof Error ? pdfParseError.message : String(pdfParseError)}`
+          )
+          content = await this.extractPdfTextWithPdfjs(dataBuffer)
+        }
       } else {
         try {
           // UTF-8로 먼저 시도
@@ -146,6 +155,40 @@ export class AITextAnalyzer {
     } catch (error) {
       throw new Error(
         `Failed to extract text from ${filePath}: ${error instanceof Error ? error.message : String(error)}`
+      )
+    }
+  }
+
+  /**
+   * pdfjs-dist를 이용한 PDF 텍스트 추출 폴백
+   */
+  private async extractPdfTextWithPdfjs(dataBuffer: Buffer): Promise<string> {
+    try {
+      const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
+      // Node 환경에서 워커 설정이 불필요한 경우가 많으나, 명시적 설정 없이 진행
+      const loadingTask = (pdfjs as any).getDocument({
+        data: new Uint8Array(dataBuffer),
+        isEvalSupported: false,
+        useSystemFonts: true,
+      })
+      const doc = await loadingTask.promise
+      try {
+        let fullText = ''
+        for (let pageNum = 1; pageNum <= doc.numPages; pageNum++) {
+          const page = await doc.getPage(pageNum)
+          const textContent = await page.getTextContent()
+          const pageText = (textContent.items as any[])
+            .map((item: any) => (typeof item?.str === 'string' ? item.str : ''))
+            .join(' ')
+          fullText += pageText + '\n'
+        }
+        return fullText
+      } finally {
+        await doc.destroy()
+      }
+    } catch (fallbackError) {
+      throw new Error(
+        `pdfjs-dist extraction failed: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`
       )
     }
   }

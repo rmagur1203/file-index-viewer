@@ -13,11 +13,11 @@ import dynamic from 'next/dynamic'
 import ListView from './list-view'
 import GalleryView from './gallery-view'
 import { FileItem } from '@/hooks/useFileBrowser'
-import SimilarImagesPanel from './similar-images-panel'
+import { SimilarImagesPanel } from './similar-images-panel'
 import { Button } from '@/components/ui/button'
 import { Brain } from 'lucide-react'
-import SimilarVideosPanel from './similar-videos-panel'
-import SimilarTextsPanel from './similar-texts-panel'
+import { SimilarVideosPanel } from './similar-videos-panel'
+import { SimilarTextsPanel } from './similar-texts-panel'
 
 // 웹 검색 결과에 따른 SSR 안전 PDF 뷰어 로드
 const PdfJsViewer = dynamic(() => import('./pdfjs-viewer'), {

@@ -73,6 +73,18 @@ const nextConfig = {
       '@mapbox/node-pre-gyp/lib/util/nw-pre-gyp': false,
     }
 
+    // pdf-parse 관련 오류 해결을 위한 웹팩 설정 추가
+    config.module.rules.push({
+      test: /\.html$/,
+      use: 'ignore-loader',
+    })
+
+    // 특정 테스트 파일을 무시하도록 설정
+    config.module.rules.push({
+      test: /05-versions-space\.pdf$/,
+      use: 'ignore-loader',
+    })
+
     return config
   },
 }

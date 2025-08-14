@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
-import SimilarImagesPanel from './similar-images-panel'
+import { SimilarImagesPanel } from './similar-images-panel'
 
 interface ImageViewerProps {
   src: string
