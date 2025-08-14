@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Search, X, AlertCircle, Brain, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Slider } from '@/components/ui/slider'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import Image from 'next/image'
+import { Input } from '@/components/ui/input'
 
 interface SimilarImage {
   file: {
@@ -53,7 +54,7 @@ export default function SimilarImagesPanel({
   const [threshold, setThreshold] = useState([0.7])
   const [limit, setLimit] = useState([10])
 
-  const searchSimilarImages = async () => {
+  const searchSimilarImages = useCallback(async () => {
     setIsLoading(true)
     setError(null)
 
@@ -79,11 +80,11 @@ export default function SimilarImagesPanel({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [filePath, threshold, limit])
 
   useEffect(() => {
     searchSimilarImages()
-  }, [filePath])
+  }, [searchSimilarImages])
 
   const getFileName = (path: string) => {
     return path.split('/').pop() || path
@@ -143,14 +144,24 @@ export default function SimilarImagesPanel({
               <Slider
                 value={limit}
                 onValueChange={setLimit}
-                max={20}
+                max={50}
                 min={5}
                 step={5}
-                className="max-w-20"
+                className="w-24"
               />
-              <span className="text-xs text-muted-foreground min-w-6">
-                {limit[0]}
-              </span>
+              <Input
+                type="number"
+                value={limit[0]}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value, 10)
+                  if (!isNaN(value) && value >= 1 && value <= 100) {
+                    setLimit([value])
+                  }
+                }}
+                className="h-8 w-16 text-center"
+                min="1"
+                max="100"
+              />
             </div>
 
             <Button
