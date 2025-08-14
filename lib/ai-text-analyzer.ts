@@ -2,6 +2,9 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import { createHash } from 'crypto'
 import { getVectorCache, AIEmbedding } from './vector-cache'
+import { pipeline, env, Pipeline } from '@xenova/transformers'
+
+env.allowLocalModels = true
 
 export interface TextAnalysisResult {
   embedding: number[]
@@ -33,6 +36,7 @@ export class AITextAnalyzer {
   private modelName = 'text-embedding-ada-002'
   private apiKey: string | null = null
   private useLocalModel = false
+  private localEmbeddingPipeline: Pipeline | null = null
 
   /**
    * 분석기 초기화
@@ -54,6 +58,10 @@ export class AITextAnalyzer {
         console.log('⚠️ No OpenAI API key found, using local embeddings')
         this.modelName = 'local-text-embeddings'
         this.useLocalModel = true
+        this.localEmbeddingPipeline = await pipeline(
+          'feature-extraction',
+          'Xenova/all-MiniLM-L6-v2'
+        )
       }
 
       console.log('✅ AI Text Analyzer initialized successfully')
@@ -264,7 +272,7 @@ export class AITextAnalyzer {
       .replace(/\r\n/g, '\n') // Windows 줄바꿈 정규화
       .replace(/\r/g, '\n') // Mac 줄바꿈 정규화
       .replace(/\n{3,}/g, '\n\n') // 과도한 줄바꿈 제거
-      .replace(/[ \t]+/g, ' ') // 연속된 공백과 탭을 단일 공백으로 정규화 (줄바꿈 유지)
+      .replace(/\s+/g, ' ') // 연속된 공백 정규화
       .trim()
   }
 
@@ -441,36 +449,28 @@ export class AITextAnalyzer {
    * 로컬 임베딩 생성 (간단한 TF-IDF 기반)
    */
   private async getLocalEmbedding(text: string): Promise<number[]> {
+    if (!this.localEmbeddingPipeline) {
+      throw new Error(
+        'Local embedding pipeline not initialized. Call initialize() first.'
+      )
+    }
+
     console.log('🔄 Generating local text embedding...')
 
-    // 간단한 문자 기반 특징 벡터 생성
-    const words = text
-      .toLowerCase()
-      .split(/\s+/)
-      .filter((word) => word.length > 2)
-    const uniqueWords = [...new Set(words)]
+    // 텍스트 길이 제한 (모델 성능 및 메모리 사용량 고려)
+    const maxLength = 512
+    const truncatedText =
+      text.length > maxLength ? text.substring(0, maxLength) : text
 
-    // 고정 크기 벡터 (1536차원으로 OpenAI와 호환)
-    const vectorSize = 1536
-    const embedding = new Array(vectorSize).fill(0)
+    const result = await this.localEmbeddingPipeline(truncatedText, {
+      pooling: 'mean',
+      normalize: true,
+    })
 
-    // 단어들을 해시하여 벡터 인덱스에 매핑
-    for (const word of uniqueWords.slice(0, 100)) {
-      // 상위 100개 단어만 사용
-      const wordHash = this.simpleHash(word)
-      const index = Math.abs(wordHash) % vectorSize
-      embedding[index] += 1
-    }
+    // 결과 텐서에서 데이터를 추출하여 일반 배열로 변환
+    const embedding = Array.from(result.data as Float32Array)
 
-    // 정규화
-    const magnitude = Math.sqrt(
-      embedding.reduce((sum, val) => sum + val * val, 0)
-    )
-    if (magnitude > 0) {
-      for (let i = 0; i < embedding.length; i++) {
-        embedding[i] /= magnitude
-      }
-    }
+    console.log(`✅ Local embedding generated: ${embedding.length} dimensions`)
 
     return embedding
   }
@@ -743,6 +743,7 @@ export class AITextAnalyzer {
   dispose(): void {
     console.log('🧹 Disposing text analyzer resources...')
     this.isInitialized = false
+    this.localEmbeddingPipeline = null
   }
 }
 
