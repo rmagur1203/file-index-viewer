@@ -12,7 +12,6 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
-import { SimilarImagesPanel } from './similar-images-panel'
 
 interface ImageViewerProps {
   src: string
@@ -20,6 +19,7 @@ interface ImageViewerProps {
   filePath?: string // 원본 파일 경로 (AI 분석용)
   onClose?: () => void
   onImageSelect?: (imagePath: string) => void // 유사 이미지 선택 시 콜백
+  onFindSimilar?: (filePath: string) => void
 }
 
 export default function ImageViewer({
@@ -28,13 +28,13 @@ export default function ImageViewer({
   filePath,
   onClose,
   onImageSelect,
+  onFindSimilar,
 }: ImageViewerProps) {
   const [scale, setScale] = useState(1)
   const [rotation, setRotation] = useState(0)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
-  const [showSimilarImages, setShowSimilarImages] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
 
@@ -113,13 +113,12 @@ export default function ImageViewer({
 
   const handleFindSimilar = useCallback(() => {
     if (filePath) {
-      setShowSimilarImages(true)
+      onFindSimilar?.(filePath)
     }
-  }, [filePath])
+  }, [filePath, onFindSimilar])
 
   const handleSimilarImageSelect = useCallback(
     (imagePath: string) => {
-      setShowSimilarImages(false)
       onImageSelect?.(imagePath)
     },
     [onImageSelect]
@@ -175,7 +174,15 @@ export default function ImageViewer({
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [handleZoomIn, handleZoomOut, handleRotate, handleReset, onClose])
+  }, [
+    handleZoomIn,
+    handleZoomOut,
+    handleRotate,
+    handleReset,
+    onClose,
+    handleFindSimilar,
+    filePath,
+  ])
 
   return (
     <div
@@ -324,15 +331,6 @@ export default function ImageViewer({
           </div>
         </div>
       </div>
-
-      {/* Similar Images Panel */}
-      {showSimilarImages && filePath && (
-        <SimilarImagesPanel
-          filePath={filePath}
-          onClose={() => setShowSimilarImages(false)}
-          onImageClick={handleSimilarImageSelect}
-        />
-      )}
     </div>
   )
 }

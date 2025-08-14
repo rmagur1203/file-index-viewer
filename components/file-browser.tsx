@@ -225,6 +225,7 @@ export default function FileBrowser({
               filePath={selectedMedia.filePath}
               onClose={() => setSelectedMedia(null)}
               onImageSelect={handleSimilarImageSelect}
+              onFindSimilar={(filePath) => handleFindSimilar(filePath, 'image')}
             />
           )}
           {selectedMedia?.type === 'pdf' && renderPdfViewer && (
