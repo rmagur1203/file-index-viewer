@@ -377,6 +377,56 @@ export class VectorCache {
   }
 
   /**
+   * 특정 파일 타입의 모든 임베딩 삭제
+   */
+  async clearEmbeddingsByType(
+    fileType: 'image' | 'video' | 'text'
+  ): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized')
+
+    console.log(`🗑️ Clearing all embeddings for file type: ${fileType}...`)
+
+    const transaction = this.db.transaction(() => {
+      // 삭제할 임베딩의 ID 목록 가져오기
+      const idsToDelete = this.db!.prepare(
+        'SELECT id FROM ai_embeddings WHERE file_type = ?'
+      )
+        .all(fileType)
+        .map((row: any) => row.id)
+
+      if (idsToDelete.length === 0) {
+        console.log(`👍 No embeddings to clear for type: ${fileType}`)
+        return
+      }
+
+      // sqlite-vec 테이블에서 삭제 (사용 가능한 경우)
+      if (this.vecLoaded) {
+        try {
+          const rowIdsToDelete = idsToDelete.map((id: string) =>
+            this.hashStringToNumber(id)
+          )
+          const placeholders = rowIdsToDelete.map(() => '?').join(',')
+          const deleteVecQuery = `DELETE FROM vec_embeddings WHERE rowid IN (${placeholders})`
+          this.db!.prepare(deleteVecQuery).run(...rowIdsToDelete)
+        } catch (error) {
+          console.warn('Failed to clear from vector table:', error)
+        }
+      }
+
+      // 기본 테이블에서 삭제
+      const placeholders = idsToDelete.map(() => '?').join(',')
+      const deleteQuery = `DELETE FROM ai_embeddings WHERE id IN (${placeholders})`
+      const result = this.db!.prepare(deleteQuery).run(...idsToDelete)
+
+      console.log(
+        `✅ Cleared ${result.changes} embeddings for file type: ${fileType}`
+      )
+    })
+
+    transaction()
+  }
+
+  /**
    * 통계 정보 조회
    */
   async getStats(): Promise<{

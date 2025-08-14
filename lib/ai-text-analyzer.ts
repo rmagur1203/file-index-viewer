@@ -56,11 +56,11 @@ export class AITextAnalyzer {
         this.useLocalModel = false
       } else {
         console.log('⚠️ No OpenAI API key found, using local embeddings')
-        this.modelName = 'local-text-embeddings'
+        this.modelName = 'Xenova/paraphrase-multilingual-MiniLM-L12-v2'
         this.useLocalModel = true
         this.localEmbeddingPipeline = await pipeline(
           'feature-extraction',
-          'Xenova/all-MiniLM-L6-v2'
+          this.modelName
         )
       }
 
