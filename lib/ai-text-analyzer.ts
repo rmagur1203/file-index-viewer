@@ -100,18 +100,8 @@ export class AITextAnalyzer {
 
       if (ext === '.pdf') {
         const dataBuffer = await fs.readFile(filePath)
-        // 1차 시도: pdf-parse 사용
-        try {
-          const { default: pdf } = await import('pdf-parse')
-          const data = await pdf(dataBuffer)
-          content = data.text
-        } catch (pdfParseError) {
-          // pdf-parse가 런타임에 테스트 파일을 참조하는 등 ENOENT 오류가 발생할 경우 폴백
-          console.warn(
-            `⚠️ pdf-parse failed, falling back to pdfjs-dist: ${pdfParseError instanceof Error ? pdfParseError.message : String(pdfParseError)}`
-          )
-          content = await this.extractPdfTextWithPdfjs(dataBuffer)
-        }
+        // 안정성을 위해 서버 사이드에서는 pdfjs-dist만 사용
+        content = await this.extractPdfTextWithPdfjs(dataBuffer)
       } else {
         try {
           // UTF-8로 먼저 시도
@@ -164,12 +154,21 @@ export class AITextAnalyzer {
    */
   private async extractPdfTextWithPdfjs(dataBuffer: Buffer): Promise<string> {
     try {
-      const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
-      // Node 환경에서 워커 설정이 불필요한 경우가 많으나, 명시적 설정 없이 진행
-      const loadingTask = (pdfjs as any).getDocument({
+      // Node.js 환경에서는 반드시 legacy 빌드를 사용해야 안정적
+      const pdfjs: any = await import('pdfjs-dist/legacy/build/pdf.mjs')
+
+      // Node 환경에서 워커를 사용하지 않도록 설정 (일부 환경에서 에러 예방)
+      if (pdfjs.GlobalWorkerOptions) {
+        try {
+          pdfjs.GlobalWorkerOptions.workerSrc = undefined as any
+        } catch {}
+      }
+
+      const loadingTask = pdfjs.getDocument({
         data: new Uint8Array(dataBuffer),
         isEvalSupported: false,
         useSystemFonts: true,
+        disableFontFace: true,
       })
       const doc = await loadingTask.promise
       try {
@@ -182,14 +181,69 @@ export class AITextAnalyzer {
             .join(' ')
           fullText += pageText + '\n'
         }
-        return fullText
+        // pdfjs가 텍스트를 추출하지 못하는 스캔본의 경우 빈 문자열이 될 수 있음
+        if (fullText.trim().length > 0) {
+          return fullText
+        }
+        // 빈 결과면 외부 도구 폴백 시도
+        return await this.extractPdfTextWithPdftotext(dataBuffer)
       } finally {
         await doc.destroy()
       }
     } catch (fallbackError) {
-      throw new Error(
-        `pdfjs-dist extraction failed: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`
-      )
+      // pdfjs 실패 시 외부 도구 폴백 시도
+      try {
+        return await this.extractPdfTextWithPdftotext(dataBuffer)
+      } catch (cliErr) {
+        throw new Error(
+          `pdfjs-dist extraction failed: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`
+        )
+      }
+    }
+  }
+
+  /**
+   * poppler의 pdftotext CLI를 사용한 폴백 추출 (설치되어 있을 때만 동작)
+   */
+  private async extractPdfTextWithPdftotext(dataBuffer: Buffer): Promise<string> {
+    try {
+      const { execSync } = await import('child_process')
+      // pdftotext 존재 확인
+      const whichOutput = execSync('which pdftotext', {
+        encoding: 'utf8',
+        stdio: 'pipe',
+      }).trim()
+      if (!whichOutput) {
+        return ''
+      }
+
+      const os = await import('os')
+      const tmpdir = os.tmpdir()
+      const inputPath = `${tmpdir}/ai-text-${Date.now()}.pdf`
+      const outputPath = `${tmpdir}/ai-text-${Date.now()}.txt`
+      await fs.writeFile(inputPath, dataBuffer)
+
+      try {
+        execSync(`pdftotext -enc UTF-8 -layout -q "${inputPath}" "${outputPath}"`, {
+          encoding: 'utf8',
+          stdio: 'pipe',
+          timeout: 60000,
+        })
+      } catch {
+        // 변환 실패시 빈 문자열 반환
+        return ''
+      } finally {
+        try { await fs.rm(inputPath) } catch {}
+      }
+
+      try {
+        const text = await fs.readFile(outputPath, 'utf-8')
+        return text || ''
+      } finally {
+        try { await fs.rm(outputPath) } catch {}
+      }
+    } catch {
+      return ''
     }
   }
 
@@ -462,18 +516,16 @@ export class AITextAnalyzer {
       // 텍스트 내용 추출
       const { text, metadata } = await this.extractTextContent(filePath)
 
-      if (text.length === 0) {
-        throw new Error('Empty text file')
-      }
-
       console.log(
         `📊 Text stats: ${metadata.wordCount} words, ${metadata.charCount} chars, language: ${metadata.language}`
       )
 
       // 임베딩 생성
       let embedding: number[]
-
-      if (this.useLocalModel) {
+      if (text.trim().length === 0) {
+        // 빈 텍스트의 경우 1536차원 영벡터로 대체하여 파이프라인을 유지
+        embedding = new Array(1536).fill(0)
+      } else if (this.useLocalModel) {
         embedding = await this.getLocalEmbedding(text)
       } else {
         embedding = await this.getOpenAIEmbedding(text)
@@ -491,7 +543,7 @@ export class AITextAnalyzer {
       return {
         embedding,
         modelName: this.modelName,
-        confidence: 0.9, // 텍스트는 일반적으로 높은 신뢰도
+        confidence: text.trim().length === 0 ? 0.1 : 0.9,
         processingTime,
         wordCount: metadata.wordCount,
         charCount: metadata.charCount,
