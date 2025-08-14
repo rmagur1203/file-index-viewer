@@ -9,7 +9,10 @@ import { Button } from '@/components/ui/button'
 interface GalleryViewProps {
   files: FileItem[]
   onFileClick: (file: FileItem) => void
-  onFindSimilar?: (filePath: string) => void
+  onFindSimilar?: (
+    filePath: string,
+    mediaType: 'image' | 'video' | 'pdf' | 'text'
+  ) => void
 }
 
 export default function GalleryView({
@@ -55,10 +58,11 @@ export default function GalleryView({
 
   const handleSimilarClick = (
     e: React.MouseEvent<HTMLButtonElement>,
-    filePath: string
+    filePath: string,
+    mediaType: 'image' | 'video' | 'pdf' | 'text'
   ) => {
     e.stopPropagation() // Prevent onFileClick from firing
-    onFindSimilar?.(filePath)
+    onFindSimilar?.(filePath, mediaType)
   }
 
   const renderFilePreview = (file: FileItem) => {
@@ -105,6 +109,19 @@ export default function GalleryView({
               <ImageIcon className="w-8 h-8 text-foreground" />
             )}
           </div>
+          {onFindSimilar && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 left-2 bg-black/50 text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+              title={isVideo ? '유사한 비디오 찾기' : '유사한 이미지 찾기'}
+              onClick={(e) =>
+                handleSimilarClick(e, file.path, isVideo ? 'video' : 'image')
+              }
+            >
+              <Brain className="w-4 h-4" />
+            </Button>
+          )}
           <div className="absolute bottom-2 right-2 bg-background/70 text-foreground text-xs px-2 py-1 rounded">
             {formatFileSize(file.size)}
           </div>
@@ -121,6 +138,17 @@ export default function GalleryView({
           <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <FileText className="w-8 h-8 text-white" />
           </div>
+          {onFindSimilar && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 left-2 bg-black/50 text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+              title="유사한 텍스트 찾기"
+              onClick={(e) => handleSimilarClick(e, file.path, 'text')}
+            >
+              <Brain className="w-4 h-4" />
+            </Button>
+          )}
           <div className="absolute bottom-2 right-2 bg-background/70 text-foreground text-xs px-2 py-1 rounded">
             {formatFileSize(file.size)}
           </div>

@@ -13,6 +13,7 @@ import {
   Maximize2,
   Minimize2,
   X,
+  Brain,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
@@ -25,9 +26,15 @@ interface PdfViewerProps {
   src: string
   fileName: string
   onClose: () => void
+  onFindSimilar?: () => void
 }
 
-export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
+export default function PdfViewer({
+  src,
+  fileName,
+  onClose,
+  onFindSimilar,
+}: PdfViewerProps) {
   const [numPages, setNumPages] = useState<number | null>(null)
   const [pageNumber, setPageNumber] = useState(1)
   const [scale, setScale] = useState(1.0)
@@ -225,6 +232,18 @@ export default function PdfViewer({ src, fileName, onClose }: PdfViewerProps) {
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
+
+          {onFindSimilar && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onFindSimilar}
+              title="유사 텍스트 찾기"
+              className="ml-4"
+            >
+              <Brain className="w-4 h-4" />
+            </Button>
+          )}
 
           {/* 줌 컨트롤 */}
           <div className="flex items-center space-x-2 ml-4">

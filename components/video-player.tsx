@@ -9,6 +9,7 @@ import {
   Maximize,
   SkipBack,
   SkipForward,
+  Brain,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
@@ -19,6 +20,7 @@ interface VideoPlayerProps {
   onClose: () => void
   onPrevVideo?: () => void
   onNextVideo?: () => void
+  onFindSimilar?: () => void
 }
 
 export default function VideoPlayer({
@@ -26,6 +28,7 @@ export default function VideoPlayer({
   onClose,
   onPrevVideo,
   onNextVideo,
+  onFindSimilar,
 }: VideoPlayerProps) {
   const { settings } = useSettings()
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -280,6 +283,18 @@ export default function VideoPlayer({
               >
                 <SkipForward className="w-5 h-5" />
               </Button>
+
+              {onFindSimilar && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onFindSimilar}
+                  className="text-white hover:bg-white/20"
+                  title="유사 비디오 찾기"
+                >
+                  <Brain className="w-5 h-5" />
+                </Button>
+              )}
 
               <div className="flex items-center gap-2 ml-4">
                 <Button

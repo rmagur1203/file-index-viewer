@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Search, X, AlertCircle, Brain, Eye } from 'lucide-react'
+import { Search, X, AlertCircle, Brain, Eye, Film } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -10,51 +10,49 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import Image from 'next/image'
 import { Input } from '@/components/ui/input'
 
-interface SimilarImage {
+interface SimilarVideoItem {
   file: {
     path: string
+    name?: string
     type: string
-    metadata?: {
-      width?: number
-      height?: number
-      size: number
-    }
+    metadata?: any
   }
   similarity: number
-  reason: string
-  modelUsed: string
+  confidence?: number
+  analysis?: any
 }
 
-interface SimilarImagesResponse {
+interface SimilarVideosResponse {
   success: boolean
-  queryFile: string
-  recommendations: SimilarImage[]
-  total: number
-  parameters: {
+  query: {
+    filePath: string
+    fileType: 'video'
     limit: number
     threshold: number
-    model: string
   }
+  recommendations: SimilarVideoItem[]
+  total: number
+  processingInfo?: any
 }
 
-interface SimilarImagesPanelProps {
+interface SimilarVideosPanelProps {
   filePath: string
   onClose: () => void
-  onImageClick?: (imagePath: string) => void
+  onVideoClick?: (videoPath: string) => void
 }
 
-export default function SimilarImagesPanel({
+export default function SimilarVideosPanel({
   filePath,
   onClose,
-  onImageClick,
-}: SimilarImagesPanelProps) {
+  onVideoClick,
+}: SimilarVideosPanelProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [results, setResults] = useState<SimilarImagesResponse | null>(null)
+  const [results, setResults] = useState<SimilarVideosResponse | null>(null)
   const [threshold, setThreshold] = useState([0.7])
   const [limit, setLimit] = useState([10])
 
-  const searchSimilarImages = useCallback(async () => {
+  const searchSimilarVideos = useCallback(async () => {
     setIsLoading(true)
     setError(null)
 
@@ -63,7 +61,7 @@ export default function SimilarImagesPanel({
         filePath,
         threshold: threshold[0].toString(),
         limit: limit[0].toString(),
-        fileType: 'image',
+        fileType: 'video',
       })
 
       const response = await fetch(`/api/ai-recommendations?${params}`)
@@ -75,31 +73,28 @@ export default function SimilarImagesPanel({
         setError(data.error || '알 수 없는 오류가 발생했습니다.')
       }
     } catch (error) {
-      console.error('Similar images search error:', error)
-      setError('유사한 이미지 검색 중 오류가 발생했습니다.')
+      console.error('Similar videos search error:', error)
+      setError('유사한 비디오 검색 중 오류가 발생했습니다.')
     } finally {
       setIsLoading(false)
     }
   }, [filePath, threshold, limit])
 
   useEffect(() => {
-    searchSimilarImages()
-  }, [searchSimilarImages])
+    searchSimilarVideos()
+  }, [searchSimilarVideos])
 
-  const getFileName = (path: string) => {
-    return path.split('/').pop() || path
-  }
+  const getFileName = (path: string) => path.split('/').pop() || path
 
-  const formatFileSize = (bytes: number) => {
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return ''
     const units = ['B', 'KB', 'MB', 'GB']
     let size = bytes
     let unitIndex = 0
-
     while (size >= 1024 && unitIndex < units.length - 1) {
       size /= 1024
       unitIndex++
     }
-
     return `${size.toFixed(1)} ${units[unitIndex]}`
   }
 
@@ -109,8 +104,8 @@ export default function SimilarImagesPanel({
         <CardHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <Brain className="w-5 h-5 text-blue-500" />
-              유사한 이미지 검색
+              <Brain className="w-5 h-5 text-green-500" />
+              유사한 비디오 검색
             </CardTitle>
             <Button variant="ghost" size="icon" onClick={onClose}>
               <X className="w-4 h-4" />
@@ -118,7 +113,7 @@ export default function SimilarImagesPanel({
           </div>
 
           <div className="text-sm text-muted-foreground">
-            기준 이미지:{' '}
+            기준 비디오:{' '}
             <span className="font-medium">{getFileName(filePath)}</span>
           </div>
 
@@ -166,7 +161,7 @@ export default function SimilarImagesPanel({
 
             <Button
               size="sm"
-              onClick={searchSimilarImages}
+              onClick={searchSimilarVideos}
               disabled={isLoading}
               className="min-w-16"
             >
@@ -185,7 +180,7 @@ export default function SimilarImagesPanel({
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
                 <p className="text-muted-foreground">
-                  AI가 유사한 이미지를 검색하고 있습니다...
+                  AI가 유사한 비디오를 검색하고 있습니다...
                 </p>
               </div>
             </div>
@@ -199,7 +194,7 @@ export default function SimilarImagesPanel({
                 <p className="text-muted-foreground text-sm">{error}</p>
                 <Button
                   variant="outline"
-                  onClick={searchSimilarImages}
+                  onClick={searchSimilarVideos}
                   className="mt-4"
                 >
                   다시 시도
@@ -214,11 +209,11 @@ export default function SimilarImagesPanel({
               <div className="flex items-center gap-4 mb-4 p-3 bg-muted/50 rounded-lg">
                 <div className="text-sm">
                   <span className="font-medium">{results.total}개</span> 유사
-                  이미지 발견
+                  비디오 발견
                 </div>
-                <Badge variant="secondary">{results.parameters.model}</Badge>
+                <Badge variant="secondary">keyframe_features</Badge>
                 <div className="text-xs text-muted-foreground">
-                  임계값 {Math.round(results.parameters.threshold * 100)}% 이상
+                  임계값 {Math.round(results.query.threshold * 100)}% 이상
                 </div>
               </div>
 
@@ -230,11 +225,11 @@ export default function SimilarImagesPanel({
                       <Card
                         key={index}
                         className="cursor-pointer hover:ring-2 hover:ring-primary transition-all duration-200"
-                        onClick={() => onImageClick?.(item.file.path)}
+                        onClick={() => onVideoClick?.(item.file.path)}
                       >
-                        <div className="aspect-square relative overflow-hidden rounded-t-lg">
+                        <div className="aspect-video relative overflow-hidden rounded-t-lg">
                           <Image
-                            src={`/api/media${item.file.path}`}
+                            src={`/api/thumbnail?path=${encodeURIComponent(item.file.path)}`}
                             alt={getFileName(item.file.path)}
                             fill
                             className="object-cover"
@@ -259,7 +254,7 @@ export default function SimilarImagesPanel({
 
                           {/* 보기 아이콘 */}
                           <div className="absolute inset-0 bg-black/0 hover:bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                            <Eye className="w-6 h-6 text-white" />
+                            <Film className="w-6 h-6 text-white" />
                           </div>
                         </div>
 
@@ -267,26 +262,20 @@ export default function SimilarImagesPanel({
                           <div className="text-sm font-medium truncate mb-1">
                             {getFileName(item.file.path)}
                           </div>
-
-                          {item.file.metadata && (
-                            <div className="text-xs text-muted-foreground space-y-1">
-                              {item.file.metadata.width &&
-                                item.file.metadata.height && (
-                                  <div>
-                                    {item.file.metadata.width} ×{' '}
-                                    {item.file.metadata.height}
-                                  </div>
-                                )}
-                              {item.file.metadata.size && (
-                                <div>
-                                  {formatFileSize(item.file.metadata.size)}
-                                </div>
-                              )}
-                            </div>
-                          )}
-
+                          <div className="text-xs text-muted-foreground space-y-1">
+                            {item.file.metadata?.duration && (
+                              <div>
+                                길이: {Math.round(item.file.metadata.duration)}s
+                              </div>
+                            )}
+                            {item.file.metadata?.size && (
+                              <div>
+                                {formatFileSize(item.file.metadata.size)}
+                              </div>
+                            )}
+                          </div>
                           <div className="text-xs text-muted-foreground mt-2">
-                            {item.reason}
+                            키프레임 기반 시각 특징 유사성
                           </div>
                         </div>
                       </Card>
@@ -297,10 +286,10 @@ export default function SimilarImagesPanel({
                     <div className="text-center">
                       <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                       <p className="text-muted-foreground font-medium mb-2">
-                        유사한 이미지를 찾을 수 없습니다
+                        유사한 비디오를 찾을 수 없습니다
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        임계값을 낮춰보거나 다른 이미지를 시도해보세요
+                        임계값을 낮춰보거나 다른 비디오를 시도해보세요
                       </p>
                     </div>
                   </div>
