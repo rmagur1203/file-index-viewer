@@ -27,7 +27,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const fullPath = path.join(mediaRoot, filePath)
+    // 웹 경로를 실제 파일 시스템 경로로 변환
+    const fullPath = path.join(
+      mediaRoot,
+      filePath.startsWith('/') ? filePath.substring(1) : filePath
+    )
 
     // 파일 타입별 추천 처리
     if (fileType === 'image' || isImage(filePath)) {
@@ -68,7 +72,7 @@ async function handleImageRecommendations(
 
     const recommendations = similarImages.map((result) => ({
       file: {
-        path: result.file.filePath,
+        path: result.file.filePath.replace(mediaRoot, ''), // 상대 경로로 변환
         type: result.file.fileType,
         metadata: result.file.metadata,
       },
@@ -79,7 +83,7 @@ async function handleImageRecommendations(
 
     return NextResponse.json({
       success: true,
-      queryFile: filePath,
+      queryFile: filePath.replace(mediaRoot, ''), // 상대 경로로 변환
       recommendations,
       total: recommendations.length,
       parameters: {
@@ -116,14 +120,14 @@ async function handleVideoRecommendations(
     return NextResponse.json({
       success: true,
       query: {
-        filePath,
+        filePath: filePath.replace(mediaRoot, ''), // 상대 경로로 변환
         fileType: 'video',
         limit,
         threshold,
       },
       recommendations: similarVideos.map((result) => ({
         file: {
-          path: result.file.filePath,
+          path: result.file.filePath.replace(mediaRoot, ''), // 상대 경로로 변환
           name: result.file.filePath.split('/').pop(),
           type: result.file.fileType,
           metadata: result.file.metadata,
@@ -190,14 +194,14 @@ async function handleTextRecommendations(
     return NextResponse.json({
       success: true,
       query: {
-        filePath,
+        filePath: filePath.replace(mediaRoot, ''), // 상대 경로로 변환
         fileType: 'text',
         limit,
         threshold,
       },
       recommendations: similarTexts.map((result) => ({
         file: {
-          path: result.file.filePath,
+          path: result.file.filePath.replace(mediaRoot, ''), // 상대 경로로 변환
           name: result.file.filePath.split('/').pop(),
           type: 'text',
           metadata: result.file.metadata,

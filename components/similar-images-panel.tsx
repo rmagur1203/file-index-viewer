@@ -168,7 +168,7 @@ export default function SimilarImagesPanel({
           </div>
         </CardHeader>
 
-        <CardContent className="flex-1 overflow-hidden">
+        <CardContent className="flex-1 min-h-0 overflow-y-auto">
           {isLoading && !results && (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
@@ -212,7 +212,7 @@ export default function SimilarImagesPanel({
               </div>
 
               {/* 결과 리스트 */}
-              <ScrollArea className="flex-1">
+              <ScrollArea className="h-full">
                 {results.recommendations.length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {results.recommendations.map((item, index) => (
