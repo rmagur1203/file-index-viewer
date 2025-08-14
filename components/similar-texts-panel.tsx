@@ -55,14 +55,7 @@ export const SimilarTextsPanel: React.FC<SimilarTextsPanelProps> = ({
       }
       const data = await response.json()
       if (data && Array.isArray(data.recommendations)) {
-        const mappedFiles = data.recommendations.map((rec: any) => ({
-          file: {
-            ...rec.file,
-            filePath: rec.file.path,
-          },
-          similarity: rec.similarity / 100,
-        }))
-        setSimilarFiles(mappedFiles)
+        setSimilarFiles(data.recommendations)
       } else {
         setSimilarFiles([])
       }

@@ -264,7 +264,7 @@ export class AITextAnalyzer {
       .replace(/\r\n/g, '\n') // Windows 줄바꿈 정규화
       .replace(/\r/g, '\n') // Mac 줄바꿈 정규화
       .replace(/\n{3,}/g, '\n\n') // 과도한 줄바꿈 제거
-      .replace(/\s+/g, ' ') // 연속된 공백 정규화
+      .replace(/[ \t]+/g, ' ') // 연속된 공백과 탭을 단일 공백으로 정규화 (줄바꿈 유지)
       .trim()
   }
 
@@ -752,7 +752,12 @@ let globalTextAnalyzer: AITextAnalyzer | null = null
 export async function getTextAnalyzer(): Promise<AITextAnalyzer> {
   if (!globalTextAnalyzer) {
     globalTextAnalyzer = new AITextAnalyzer()
+  }
+
+  // AITextAnalyzer 클래스에 isInitialized 속성이 이미 존재함
+  if (!globalTextAnalyzer.getModelInfo().isInitialized) {
     await globalTextAnalyzer.initialize()
   }
+
   return globalTextAnalyzer
 }

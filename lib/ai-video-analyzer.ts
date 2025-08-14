@@ -808,12 +808,16 @@ export class AIVideoAnalyzer {
 }
 
 // 전역 AI 비디오 분석기 인스턴스 (싱글톤 패턴)
-let globalVideoAnalyzer: AIVideoAnalyzer | null = null
+let videoAnalyzerInstance: AIVideoAnalyzer | null = null
 
 export async function getVideoAnalyzer(): Promise<AIVideoAnalyzer> {
-  if (!globalVideoAnalyzer) {
-    globalVideoAnalyzer = new AIVideoAnalyzer()
-    await globalVideoAnalyzer.initialize()
+  if (!videoAnalyzerInstance) {
+    videoAnalyzerInstance = new AIVideoAnalyzer()
   }
-  return globalVideoAnalyzer
+
+  if (!videoAnalyzerInstance.isInitialized) {
+    await videoAnalyzerInstance.initialize()
+  }
+
+  return videoAnalyzerInstance
 }

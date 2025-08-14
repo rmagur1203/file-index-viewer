@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import path from 'path'
+import Image from 'next/image'
 import { Brain, Film, Loader2, Search, X } from 'lucide-react'
 import { Slider } from '@/components/ui/slider'
 import { Button } from '@/components/ui/button'
@@ -54,7 +55,11 @@ export const SimilarVideosPanel: React.FC<SimilarVideosPanelProps> = ({
         throw new Error('유사한 비디오를 찾는 데 실패했습니다.')
       }
       const data = await response.json()
-      setSimilarFiles(data)
+      if (data && Array.isArray(data.recommendations)) {
+        setSimilarFiles(data.recommendations)
+      } else {
+        setSimilarFiles([])
+      }
     } catch (err) {
       setError(
         err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.'
@@ -137,15 +142,29 @@ export const SimilarVideosPanel: React.FC<SimilarVideosPanelProps> = ({
                   className="relative group cursor-pointer"
                   onClick={() => handleVideoClick(file.filePath)}
                 >
-                  {isVideo(file.filePath) ? (
-                    <div className="w-full h-32 rounded-md bg-gray-800 flex items-center justify-center">
-                      <Film className="w-10 h-10 text-gray-500" />
-                    </div>
-                  ) : (
-                    <div className="w-full h-32 rounded-md bg-gray-200 flex items-center justify-center">
-                      <Brain className="w-8 h-8 text-gray-500" />
-                    </div>
-                  )}
+                  <div className="w-full h-32 rounded-md bg-gray-800 flex items-center justify-center relative">
+                    <Image
+                      src={`/api/thumbnail?path=${encodeURIComponent(
+                        file.filePath
+                      )}`}
+                      alt={path.basename(file.filePath)}
+                      fill
+                      className="object-cover rounded-md"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.style.display = 'none'
+                        const parent = target.parentElement
+                        if (parent) {
+                          const fallback = document.createElement('div')
+                          fallback.className =
+                            'w-full h-full flex items-center justify-center bg-muted'
+                          fallback.innerHTML =
+                            '<svg class="w-10 h-10 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"></path></svg>'
+                          parent.appendChild(fallback)
+                        }
+                      }}
+                    />
+                  </div>
 
                   <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <p className="text-white text-xs text-center p-1">

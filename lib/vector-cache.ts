@@ -33,6 +33,10 @@ export class VectorCache {
     this.dbPath = dbPath || path.join(process.cwd(), 'temp', 'vector-cache.db')
   }
 
+  isInitialized(): boolean {
+    return this.db !== null
+  }
+
   /**
    * 데이터베이스 연결 및 sqlite-vec 로딩
    */
@@ -433,12 +437,16 @@ export class VectorCache {
 }
 
 // 전역 벡터 캐시 인스턴스 (싱글톤 패턴)
-let globalVectorCache: VectorCache | null = null
+let vectorCacheInstance: VectorCache | null = null
 
 export async function getVectorCache(): Promise<VectorCache> {
-  if (!globalVectorCache) {
-    globalVectorCache = new VectorCache()
-    await globalVectorCache.initialize()
+  if (!vectorCacheInstance) {
+    vectorCacheInstance = new VectorCache()
   }
-  return globalVectorCache
+
+  if (!vectorCacheInstance.isInitialized()) {
+    await vectorCacheInstance.initialize()
+  }
+
+  return vectorCacheInstance
 }

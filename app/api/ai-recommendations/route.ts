@@ -72,11 +72,11 @@ async function handleImageRecommendations(
 
     const recommendations = similarImages.map((result) => ({
       file: {
-        path: result.file.filePath.replace(mediaRoot, ''), // 상대 경로로 변환
+        filePath: result.file.filePath.replace(mediaRoot, ''), // 상대 경로로 변환
         type: result.file.fileType,
         metadata: result.file.metadata,
       },
-      similarity: Math.round(result.similarity * 100),
+      similarity: result.similarity,
       reason: 'AI 시각적 특징 유사성',
       modelUsed: result.file.modelName,
     }))
@@ -127,12 +127,12 @@ async function handleVideoRecommendations(
       },
       recommendations: similarVideos.map((result) => ({
         file: {
-          path: result.file.filePath.replace(mediaRoot, ''), // 상대 경로로 변환
+          filePath: result.file.filePath.replace(mediaRoot, ''), // 상대 경로로 변환
           name: result.file.filePath.split('/').pop(),
           type: result.file.fileType,
           metadata: result.file.metadata,
         },
-        similarity: Math.round(result.similarity * 100), // 백분율로 변환
+        similarity: result.similarity,
         confidence: (result.file.metadata as any)?.confidence || 0,
         analysis: {
           modelName: result.file.modelName,
@@ -201,12 +201,12 @@ async function handleTextRecommendations(
       },
       recommendations: similarTexts.map((result) => ({
         file: {
-          path: result.file.filePath.replace(mediaRoot, ''), // 상대 경로로 변환
+          filePath: result.file.filePath.replace(mediaRoot, ''), // 상대 경로로 변환
           name: result.file.filePath.split('/').pop(),
           type: 'text',
           metadata: result.file.metadata,
         },
-        similarity: Math.round(result.similarity * 100), // 백분율로 변환
+        similarity: result.similarity, // 백분율로 변환
         confidence: (result.file.metadata as any)?.confidence || 0,
         analysis: {
           modelName: result.file.modelName,

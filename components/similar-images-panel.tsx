@@ -54,7 +54,7 @@ export const SimilarImagesPanel: React.FC<SimilarImagesPanelProps> = ({
         throw new Error('유사한 이미지를 찾는 데 실패했습니다.')
       }
       const data = await response.json()
-      setSimilarFiles(data)
+      setSimilarFiles(data.recommendations || [])
     } catch (err) {
       setError(
         err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.'
