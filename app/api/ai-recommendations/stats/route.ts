@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getVectorCache } from '@/lib/vector-cache'
 import { getImageAnalyzer } from '@/lib/ai-image-analyzer'
+import { getVideoAnalyzer } from '@/lib/ai-video-analyzer'
+import { getTextAnalyzer } from '@/lib/ai-text-analyzer'
 
 export async function GET(_request: NextRequest) {
   try {
@@ -29,21 +31,49 @@ export async function GET(_request: NextRequest) {
       })
     }
 
-    // TODO: 텍스트, 비디오 모델 정보 추가
-    modelInfo.push(
-      {
-        type: 'text',
-        name: 'text-embedding',
-        isInitialized: false,
-        status: 'not_implemented',
-      },
-      {
+    // 비디오 분석기 정보
+    let videoAnalyzerInitialized = false
+    try {
+      const videoAnalyzer = await getVideoAnalyzer()
+      const videoModelInfo = videoAnalyzer.getModelInfo()
+      videoAnalyzerInitialized = videoModelInfo.isInitialized
+      modelInfo.push({
+        type: 'video',
+        name: videoModelInfo.name,
+        isInitialized: videoModelInfo.isInitialized,
+        status: videoModelInfo.isInitialized ? 'ready' : 'not_loaded',
+      })
+    } catch (error) {
+      modelInfo.push({
         type: 'video',
         name: 'video-features',
         isInitialized: false,
-        status: 'not_implemented',
-      }
-    )
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
+    }
+
+    // 텍스트 분석기 정보
+    let textAnalyzerInitialized = false
+    try {
+      const textAnalyzer = await getTextAnalyzer()
+      const textModelInfo = textAnalyzer.getModelInfo()
+      textAnalyzerInitialized = textModelInfo.isInitialized
+      modelInfo.push({
+        type: 'text',
+        name: textModelInfo.name,
+        isInitialized: textModelInfo.isInitialized,
+        status: textModelInfo.isInitialized ? 'ready' : 'not_loaded',
+      })
+    } catch (error) {
+      modelInfo.push({
+        type: 'text',
+        name: 'text-embedding',
+        isInitialized: false,
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
+    }
 
     // 성능 통계 (더미 데이터 - 실제로는 추적 시스템 필요)
     const performanceStats = {
@@ -67,8 +97,8 @@ export async function GET(_request: NextRequest) {
       performance: performanceStats,
       features: {
         imageAnalysis: true,
-        textAnalysis: false,
-        videoAnalysis: false,
+        textAnalysis: textAnalyzerInitialized,
+        videoAnalysis: videoAnalyzerInitialized,
         vectorSearch: true,
         batchProcessing: true,
       },

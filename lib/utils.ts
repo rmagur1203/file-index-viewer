@@ -82,7 +82,7 @@ export const isPdf = (fileName: string): boolean =>
   hasExtension(fileName, pdfExtensions)
 
 export const isText = (fileName: string): boolean =>
-  hasExtension(fileName, textExtensions)
+  hasExtension(fileName, [...textExtensions, ...pdfExtensions])
 
 export const getMediaType = (
   fileName: string

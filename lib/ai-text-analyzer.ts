@@ -74,6 +74,23 @@ export class AITextAnalyzer {
     metadata: TextMetadata
   }> {
     try {
+      // 파일 존재 여부 확인
+      try {
+        await fs.access(filePath)
+      } catch (accessError) {
+        console.warn(`⚠️ File not found, skipping: ${filePath}`)
+        return {
+          text: '',
+          metadata: {
+            size: 0,
+            hash: '',
+            encoding: '',
+            wordCount: 0,
+            charCount: 0,
+          },
+        }
+      }
+
       // 파일 통계 정보
       const stats = await fs.stat(filePath)
 
@@ -81,19 +98,30 @@ export class AITextAnalyzer {
       let content = ''
       const ext = path.extname(filePath).toLowerCase()
 
-      try {
-        // UTF-8로 먼저 시도
-        content = await fs.readFile(filePath, 'utf-8')
-      } catch (encodingError) {
-        // UTF-8 실패시 다른 인코딩 시도
+      if (ext === '.pdf') {
+        const dataBuffer = await fs.readFile(filePath)
+        const { default: pdf } = await import('pdf-parse')
+        const data = await pdf(dataBuffer)
+        content = data.text
+      } else {
         try {
-          content = await fs.readFile(filePath, 'latin1')
-        } catch (fallbackError) {
-          console.warn(
-            `⚠️ Failed to read ${filePath} with standard encodings, using buffer`
-          )
-          const buffer = await fs.readFile(filePath)
-          content = buffer.toString('utf-8', 0, Math.min(buffer.length, 10000)) // 처음 10KB만
+          // UTF-8로 먼저 시도
+          content = await fs.readFile(filePath, 'utf-8')
+        } catch (encodingError) {
+          // UTF-8 실패시 다른 인코딩 시도
+          try {
+            content = await fs.readFile(filePath, 'latin1')
+          } catch (fallbackError) {
+            console.warn(
+              `⚠️ Failed to read ${filePath} with standard encodings, using buffer`
+            )
+            const buffer = await fs.readFile(filePath)
+            content = buffer.toString(
+              'utf-8',
+              0,
+              Math.min(buffer.length, 10000)
+            ) // 처음 10KB만
+          }
         }
       }
 
@@ -215,7 +243,11 @@ export class AITextAnalyzer {
       console.error('❌ OpenAI API call failed:', error)
 
       // API 오류시 로컬 임베딩으로 폴백
-      if (error.message.includes('API') && !error.message.includes('key')) {
+      if (
+        error instanceof Error &&
+        error.message.includes('API') &&
+        !error.message.includes('key')
+      ) {
         console.warn('🔄 Falling back to local embedding due to API error')
         return await this.getLocalEmbedding(text)
       }
@@ -442,7 +474,11 @@ export class AITextAnalyzer {
 
     // 캐시에서 기존 임베딩 확인
     const existingEmbedding = await vectorCache.getEmbeddingByPath(filePath)
-    if (existingEmbedding && existingEmbedding.metadata.hash === fileHash) {
+    if (
+      existingEmbedding &&
+      existingEmbedding.metadata &&
+      existingEmbedding.metadata.hash === fileHash
+    ) {
       console.log(
         `📋 Using cached text embedding for: ${path.basename(filePath)}`
       )

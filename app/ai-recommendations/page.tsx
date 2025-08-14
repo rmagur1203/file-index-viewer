@@ -219,11 +219,14 @@ export default function AIRecommendationsPage() {
             >
               <Video className="w-4 h-4" />
               비디오
-              {!stats?.features.videoAnalysis && (
-                <Badge variant="outline" className="ml-2">
-                  개발 중
-                </Badge>
-              )}
+              <Badge
+                variant={
+                  stats?.features.videoAnalysis ? 'secondary' : 'outline'
+                }
+                className="ml-2"
+              >
+                {stats?.features.videoAnalysis ? '활성' : '개발 중'}
+              </Badge>
             </Button>
             <Button
               variant={
@@ -235,11 +238,12 @@ export default function AIRecommendationsPage() {
             >
               <FileText className="w-4 h-4" />
               텍스트
-              {!stats?.features.textAnalysis && (
-                <Badge variant="outline" className="ml-2">
-                  개발 중
-                </Badge>
-              )}
+              <Badge
+                variant={stats?.features.textAnalysis ? 'secondary' : 'outline'}
+                className="ml-2"
+              >
+                {stats?.features.textAnalysis ? '활성' : '개발 중'}
+              </Badge>
             </Button>
           </div>
         </CardContent>
@@ -424,8 +428,14 @@ export default function AIRecommendationsPage() {
             </div>
             <div className="space-y-2">
               <h4 className="font-semibold flex items-center gap-2">
-                <Video className="w-4 h-4 text-yellow-500" />
-                비디오 AI 분석 🚧
+                <Video
+                  className={`w-4 h-4 ${
+                    stats?.features.videoAnalysis
+                      ? 'text-green-500'
+                      : 'text-yellow-500'
+                  }`}
+                />
+                비디오 AI 분석 {stats?.features.videoAnalysis ? '✅' : '🚧'}
               </h4>
               <ul className="text-sm text-muted-foreground space-y-1 ml-6">
                 <li>• 키프레임 기반 특징 추출 (개발 중)</li>
@@ -436,8 +446,14 @@ export default function AIRecommendationsPage() {
             </div>
             <div className="space-y-2">
               <h4 className="font-semibold flex items-center gap-2">
-                <FileText className="w-4 h-4 text-blue-500" />
-                텍스트 AI 분석 🔮
+                <FileText
+                  className={`w-4 h-4 ${
+                    stats?.features.textAnalysis
+                      ? 'text-green-500'
+                      : 'text-blue-500'
+                  }`}
+                />
+                텍스트 AI 분석 {stats?.features.textAnalysis ? '✅' : '🔮'}
               </h4>
               <ul className="text-sm text-muted-foreground space-y-1 ml-6">
                 <li>• 의미적 임베딩 기반 분석 (계획됨)</li>
