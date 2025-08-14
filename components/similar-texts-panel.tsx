@@ -54,7 +54,18 @@ export const SimilarTextsPanel: React.FC<SimilarTextsPanelProps> = ({
         throw new Error('유사한 텍스트를 찾는 데 실패했습니다.')
       }
       const data = await response.json()
-      setSimilarFiles(data)
+      if (data && Array.isArray(data.recommendations)) {
+        const mappedFiles = data.recommendations.map((rec: any) => ({
+          file: {
+            ...rec.file,
+            filePath: rec.file.path,
+          },
+          similarity: rec.similarity / 100,
+        }))
+        setSimilarFiles(mappedFiles)
+      } else {
+        setSimilarFiles([])
+      }
     } catch (err) {
       setError(
         err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.'
@@ -131,29 +142,33 @@ export const SimilarTextsPanel: React.FC<SimilarTextsPanelProps> = ({
               </div>
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {similarFiles.map(({ file, similarity }) => (
-                <div
-                  key={file.filePath}
-                  className="relative group cursor-pointer border rounded-lg p-4 hover:bg-gray-50"
-                  onClick={() => handleTextClick(file.filePath)}
-                >
-                  <div className="flex items-start space-x-4">
-                    <FileText className="w-6 h-6 text-gray-500 mt-1" />
-                    <div className="flex-grow">
-                      <p className="font-semibold text-sm truncate">
-                        {path.basename(file.filePath)}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {path.dirname(file.filePath)}
-                      </p>
+              {Array.isArray(similarFiles) &&
+                similarFiles.map(({ file, similarity }) => (
+                  <div
+                    key={file.filePath}
+                    className="relative group cursor-pointer border rounded-lg p-4 hover:bg-gray-50"
+                    onClick={() => handleTextClick(file.filePath)}
+                  >
+                    <div className="flex items-start space-x-4">
+                      <FileText className="w-6 h-6 text-gray-500 mt-1" />
+                      <div className="flex-grow">
+                        <p className="font-semibold text-sm truncate">
+                          {path.basename(file.filePath)}
+                        </p>
+                        <p className="text-xs text-gray-500 break-all">
+                          {path.dirname(file.filePath)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  <Badge variant="secondary" className="absolute top-2 right-2">
-                    {(similarity * 100).toFixed(0)}%
-                  </Badge>
-                </div>
-              ))}
+                    <Badge
+                      variant="secondary"
+                      className="absolute top-2 right-2"
+                    >
+                      {(similarity * 100).toFixed(0)}%
+                    </Badge>
+                  </div>
+                ))}
             </div>
           </ScrollArea>
         </div>

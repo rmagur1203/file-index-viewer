@@ -183,7 +183,7 @@ async function getVideoInfo(
     }).trim()
     const [width, height] = resolutionOutput
       .split(',')
-      .map((s) => parseInt(s.trim()) || 0)
+      .map((s: string) => parseInt(s.trim(), 10) || 0)
 
     console.log(`📐 Video info: ${duration}s, ${width}x${height}`)
 

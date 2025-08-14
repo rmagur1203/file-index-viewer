@@ -205,7 +205,9 @@ export class AITextAnalyzer {
   /**
    * poppler의 pdftotext CLI를 사용한 폴백 추출 (설치되어 있을 때만 동작)
    */
-  private async extractPdfTextWithPdftotext(dataBuffer: Buffer): Promise<string> {
+  private async extractPdfTextWithPdftotext(
+    dataBuffer: Buffer
+  ): Promise<string> {
     try {
       const { execSync } = await import('child_process')
       // pdftotext 존재 확인
@@ -224,23 +226,30 @@ export class AITextAnalyzer {
       await fs.writeFile(inputPath, dataBuffer)
 
       try {
-        execSync(`pdftotext -enc UTF-8 -layout -q "${inputPath}" "${outputPath}"`, {
-          encoding: 'utf8',
-          stdio: 'pipe',
-          timeout: 60000,
-        })
+        execSync(
+          `pdftotext -enc UTF-8 -layout -q "${inputPath}" "${outputPath}"`,
+          {
+            encoding: 'utf8',
+            stdio: 'pipe',
+            timeout: 60000,
+          }
+        )
       } catch {
         // 변환 실패시 빈 문자열 반환
         return ''
       } finally {
-        try { await fs.rm(inputPath) } catch {}
+        try {
+          await fs.rm(inputPath)
+        } catch {}
       }
 
       try {
         const text = await fs.readFile(outputPath, 'utf-8')
         return text || ''
       } finally {
-        try { await fs.rm(outputPath) } catch {}
+        try {
+          await fs.rm(outputPath)
+        } catch {}
       }
     } catch {
       return ''

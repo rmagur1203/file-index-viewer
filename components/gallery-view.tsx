@@ -179,7 +179,7 @@ export default function GalleryView({
                 size="icon"
                 className="absolute top-2 left-2 bg-black/50 text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                 title="유사한 이미지 찾기"
-                onClick={(e) => handleSimilarClick(e, file.path)}
+                onClick={(e) => handleSimilarClick(e, file.path, 'image')}
               >
                 <Brain className="w-4 h-4" />
               </Button>
