@@ -15,26 +15,96 @@ export class AIImageAnalyzer {
   private model: tf.LayersModel | null = null
   private modelName = 'mobilenet_v2'
   private isInitialized = false
+  private isInitializing = false
 
   /**
    * 모델 초기화
    */
   async initialize(): Promise<void> {
+    // 이미 초기화되었거나 초기화 중인 경우
     if (this.isInitialized) return
+    if (this.isInitializing) {
+      // 초기화가 진행 중이면 완료될 때까지 대기
+      while (this.isInitializing && !this.isInitialized) {
+        await new Promise((resolve) => setTimeout(resolve, 100))
+      }
+      return
+    }
+
+    this.isInitializing = true
 
     try {
       console.log('🤖 Loading TensorFlow.js MobileNet model...')
 
-      // MobileNetV2 모델 로딩 (사전 훈련된 모델)
-      this.model = await tf.loadLayersModel(
-        'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v2_1.0_224/model.json'
-      )
+      // 기존 모델이 있다면 정리
+      if (this.model) {
+        console.log('🧹 Disposing existing model...')
+        this.model.dispose()
+        this.model = null
+      }
+
+      // TensorFlow.js 메모리 정리 및 백엔드 준비
+      tf.disposeVariables()
+      await tf.ready()
+
+      console.log(`🔧 TensorFlow.js backend: ${tf.getBackend()}`)
+      console.log(`📊 Memory info: ${JSON.stringify(tf.memory())}`)
+
+      // MobileNet v1 모델 로딩 (안정적인 URL)
+      console.log('📥 Downloading MobileNet model...')
+
+      // 여러 안정적인 모델 URL 시도
+      const modelUrls = [
+        'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_1.0_224/model.json',
+        'https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@1.0.0/dist/model.json',
+      ]
+
+      let modelLoaded = false
+      for (const modelUrl of modelUrls) {
+        try {
+          console.log(`📥 Trying model URL: ${modelUrl}`)
+
+          // 모델 로딩 (메모리 관리 개선)
+          this.model = await tf.loadLayersModel(modelUrl)
+
+          modelLoaded = true
+          console.log(`✅ Model loaded successfully from: ${modelUrl}`)
+          break
+        } catch (error) {
+          console.warn(
+            `⚠️ Failed to load model from ${modelUrl}:`,
+            (error as Error).message
+          )
+        }
+      }
+
+      if (!modelLoaded) {
+        throw new Error(
+          'Failed to load MobileNet model from all available URLs'
+        )
+      }
 
       console.log('✅ MobileNet model loaded successfully')
+      console.log(`📊 Model input shape: ${this.model?.inputs[0].shape}`)
+      console.log(`📊 Updated memory info: ${JSON.stringify(tf.memory())}`)
+
       this.isInitialized = true
     } catch (error) {
       console.error('❌ Failed to load AI model:', error)
-      throw new Error('AI model initialization failed')
+      console.error('Error details:', {
+        message: (error as Error).message,
+        stack: (error as Error).stack,
+        backend: tf.getBackend(),
+        tfVersion: tf.version.tfjs,
+        memoryInfo: tf.memory(),
+      })
+
+      this.isInitialized = false
+      throw new Error(
+        `AI model initialization failed: ${(error as Error).message}`
+      )
+    } finally {
+      this.isInitializing = false
     }
   }
 
@@ -122,16 +192,49 @@ export class AIImageAnalyzer {
       // MobileNet 예측 실행
       const prediction = this.model.predict(imageTensor) as tf.Tensor
 
-      // Global Average Pooling (특징 벡터로 변환)
-      const features = tf.mean(prediction, [1, 2]) // [batch, height, width, channels] -> [batch, channels]
+      // 텐서 shape 로깅 (디버깅용)
+      console.log(
+        `📊 Prediction tensor shape: [${prediction.shape.join(', ')}]`
+      )
+      console.log(`📊 Prediction tensor rank: ${prediction.rank}`)
+
+      let features: tf.Tensor
+
+      // 텐서 차원에 따라 적절한 처리 방법 선택
+      if (prediction.rank === 4) {
+        // 4차원 텐서 [batch, height, width, channels]의 경우
+        console.log('🔧 Processing 4D tensor with Global Average Pooling...')
+        features = tf.mean(prediction, [1, 2]) // [batch, height, width, channels] -> [batch, channels]
+      } else if (prediction.rank === 2) {
+        // 2차원 텐서 [batch, features]의 경우 (이미 flatten된 상태)
+        console.log('🔧 Processing 2D tensor (already flattened)...')
+        features = prediction
+      } else if (prediction.rank === 3) {
+        // 3차원 텐서 [batch, 1, channels] 또는 [batch, height, channels]의 경우
+        console.log('🔧 Processing 3D tensor...')
+        // 마지막 차원만 남기고 평균화
+        features = tf.mean(prediction, [1])
+      } else {
+        throw new Error(
+          `Unsupported tensor rank: ${prediction.rank}. Expected 2, 3, or 4 dimensions.`
+        )
+      }
+
+      // 배치 차원 제거 (단일 이미지 처리)
+      const squeezed = features.squeeze([0])
 
       // 텐서를 JavaScript 배열로 변환
-      const featuresArray = await features.data()
+      const featuresArray = await squeezed.data()
       const featuresVector = Array.from(featuresArray)
+
+      console.log(`✅ Features extracted: ${featuresVector.length} dimensions`)
 
       // 메모리 정리
       prediction.dispose()
-      features.dispose()
+      if (features !== prediction) {
+        features.dispose()
+      }
+      squeezed.dispose()
 
       return featuresVector
     } catch (error) {
@@ -335,16 +438,53 @@ export class AIImageAnalyzer {
       this.model = null
     }
     this.isInitialized = false
+    this.isInitializing = false
   }
 }
 
 // 전역 AI 이미지 분석기 인스턴스 (싱글톤 패턴)
 let globalImageAnalyzer: AIImageAnalyzer | null = null
+let initializationPromise: Promise<AIImageAnalyzer> | null = null
 
 export async function getImageAnalyzer(): Promise<AIImageAnalyzer> {
-  if (!globalImageAnalyzer) {
-    globalImageAnalyzer = new AIImageAnalyzer()
-    await globalImageAnalyzer.initialize()
+  // 이미 인스턴스가 있고 초기화되었다면 반환
+  if (globalImageAnalyzer?.getModelInfo().isInitialized) {
+    return globalImageAnalyzer
   }
-  return globalImageAnalyzer
+
+  // 초기화가 진행 중이라면 기다림
+  if (initializationPromise) {
+    return await initializationPromise
+  }
+
+  // 새로운 초기화 시작
+  initializationPromise = (async () => {
+    try {
+      // 기존 인스턴스가 있다면 정리
+      if (globalImageAnalyzer) {
+        globalImageAnalyzer.dispose()
+      }
+
+      console.log('🔄 Creating new AI Image Analyzer instance...')
+      globalImageAnalyzer = new AIImageAnalyzer()
+      await globalImageAnalyzer.initialize()
+
+      console.log('✅ AI Image Analyzer ready for use')
+      return globalImageAnalyzer
+    } catch (error) {
+      // 초기화 실패시 정리
+      globalImageAnalyzer = null
+      initializationPromise = null
+      throw error
+    }
+  })()
+
+  try {
+    const analyzer = await initializationPromise
+    initializationPromise = null
+    return analyzer
+  } catch (error) {
+    initializationPromise = null
+    throw error
+  }
 }

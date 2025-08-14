@@ -13,6 +13,7 @@ import dynamic from 'next/dynamic'
 import ListView from './list-view'
 import GalleryView from './gallery-view'
 import { FileItem } from '@/hooks/useFileBrowser'
+import SimilarImagesPanel from './similar-images-panel'
 
 // 웹 검색 결과에 따른 SSR 안전 PDF 뷰어 로드
 const PdfJsViewer = dynamic(() => import('./pdfjs-viewer'), {
@@ -43,6 +44,7 @@ interface SelectedMedia {
   path: string
   name: string
   type: 'video' | 'image' | 'pdf' | 'text'
+  filePath?: string // 원본 파일 경로 (AI 분석용)
 }
 
 interface FileBrowserProps {
@@ -62,6 +64,10 @@ export default function FileBrowser({
 }: FileBrowserProps) {
   const [selectedMedia, setSelectedMedia] = useState<SelectedMedia | null>(null)
   const [renderPdfViewer, setRenderPdfViewer] = useState(false)
+  const [showSimilarImages, setShowSimilarImages] = useState(false)
+  const [similarImageQuery, setSimilarImageQuery] = useState<string | null>(
+    null
+  )
 
   const handlePrevVideo = () => {
     const videoFiles = files.filter((file) => file.mediaType === 'video')
@@ -109,8 +115,27 @@ export default function FileBrowser({
         path: file.path,
         name: file.name,
         type: file.mediaType,
+        filePath: file.path, // 원본 파일 경로 저장
       })
     }
+  }
+
+  const handleSimilarImageSelect = (imagePath: string) => {
+    // 유사한 이미지가 선택되었을 때 해당 이미지를 표시
+    const fileName = imagePath.split('/').pop() || imagePath
+    setShowSimilarImages(false)
+    setSimilarImageQuery(null)
+    setSelectedMedia({
+      path: imagePath,
+      name: fileName,
+      type: 'image',
+      filePath: imagePath,
+    })
+  }
+
+  const handleFindSimilar = (filePath: string) => {
+    setSimilarImageQuery(filePath)
+    setShowSimilarImages(true)
   }
 
   const filteredFiles = files.filter((file) =>
@@ -131,7 +156,11 @@ export default function FileBrowser({
         {viewMode === 'list' ? (
           <ListView files={filteredFiles} onFileClick={handleFileClick} />
         ) : (
-          <GalleryView files={filteredFiles} onFileClick={handleFileClick} />
+          <GalleryView
+            files={filteredFiles}
+            onFileClick={handleFileClick}
+            onFindSimilar={handleFindSimilar}
+          />
         )}
       </div>
 
@@ -168,7 +197,9 @@ export default function FileBrowser({
             <ImageViewer
               src={`/api/media${selectedMedia.path}`}
               alt={selectedMedia.name}
+              filePath={selectedMedia.filePath}
               onClose={() => setSelectedMedia(null)}
+              onImageSelect={handleSimilarImageSelect}
             />
           )}
           {selectedMedia?.type === 'pdf' && renderPdfViewer && (
@@ -203,6 +234,17 @@ export default function FileBrowser({
           )}
         </DialogContent>
       </Dialog>
+
+      {showSimilarImages && similarImageQuery && (
+        <SimilarImagesPanel
+          filePath={similarImageQuery}
+          onClose={() => {
+            setShowSimilarImages(false)
+            setSimilarImageQuery(null)
+          }}
+          onImageClick={handleSimilarImageSelect}
+        />
+      )}
     </>
   )
 }

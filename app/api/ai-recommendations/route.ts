@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getImageAnalyzer } from '@/lib/ai-image-analyzer'
+import { getVideoAnalyzer } from '@/lib/ai-video-analyzer'
+import { getTextAnalyzer } from '@/lib/ai-text-analyzer'
 import { getVectorCache } from '@/lib/vector-cache'
-import { isImage } from '@/lib/utils'
+import { isImage, isVideo, isText } from '@/lib/utils'
+import path from 'path'
+
+const mediaRoot = process.env.VIDEO_ROOT || ''
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,21 +27,15 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const fullPath = path.join(mediaRoot, filePath)
+
     // 파일 타입별 추천 처리
     if (fileType === 'image' || isImage(filePath)) {
-      return await handleImageRecommendations(filePath, limit, threshold)
-    } else if (fileType === 'text') {
-      // TODO: 텍스트 추천 구현
-      return NextResponse.json(
-        { message: 'Text recommendations not implemented yet' },
-        { status: 501 }
-      )
-    } else if (fileType === 'video') {
-      // TODO: 비디오 추천 구현
-      return NextResponse.json(
-        { message: 'Video recommendations not implemented yet' },
-        { status: 501 }
-      )
+      return await handleImageRecommendations(fullPath, limit, threshold)
+    } else if (fileType === 'video' || isVideo(filePath)) {
+      return await handleVideoRecommendations(fullPath, limit, threshold)
+    } else if (fileType === 'text' || isText(filePath)) {
+      return await handleTextRecommendations(fullPath, limit, threshold)
     } else {
       return NextResponse.json(
         { error: 'Unsupported file type' },
@@ -95,6 +94,159 @@ async function handleImageRecommendations(
   }
 }
 
+async function handleVideoRecommendations(
+  filePath: string,
+  limit: number,
+  threshold: number
+) {
+  try {
+    const videoAnalyzer = await getVideoAnalyzer()
+
+    console.log(`🎬 Finding similar videos for: ${filePath}`)
+
+    // 유사한 비디오 검색
+    const similarVideos = await videoAnalyzer.findSimilarVideos(
+      filePath,
+      limit,
+      threshold
+    )
+
+    console.log(`✅ Found ${similarVideos.length} similar videos`)
+
+    return NextResponse.json({
+      success: true,
+      query: {
+        filePath,
+        fileType: 'video',
+        limit,
+        threshold,
+      },
+      recommendations: similarVideos.map((result) => ({
+        file: {
+          path: result.file.filePath,
+          name: result.file.filePath.split('/').pop(),
+          type: result.file.fileType,
+          metadata: result.file.metadata,
+        },
+        similarity: Math.round(result.similarity * 100), // 백분율로 변환
+        confidence: (result.file.metadata as any)?.confidence || 0,
+        analysis: {
+          modelName: result.file.modelName,
+          extractedAt: result.file.extractedAt,
+          embeddingDimensions: result.file.embedding.length,
+          frameCount: (result.file.metadata as any)?.frameCount || 0,
+          processingTime: (result.file.metadata as any)?.processingTime || 0,
+        },
+      })),
+      total: similarVideos.length,
+      processingInfo: {
+        analyzer: 'video_mobilenet_v2',
+        method: 'keyframe_feature_extraction',
+        threshold: threshold,
+      },
+    })
+  } catch (error) {
+    console.error('Video recommendations error:', error)
+
+    if (
+      (error as Error).message?.includes('not found') ||
+      (error as Error).message?.includes('does not exist')
+    ) {
+      return NextResponse.json(
+        { error: 'Video file not found or inaccessible' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json(
+      {
+        error: 'Failed to generate video recommendations',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    )
+  }
+}
+
+async function handleTextRecommendations(
+  filePath: string,
+  limit: number,
+  threshold: number
+) {
+  try {
+    const textAnalyzer = await getTextAnalyzer()
+
+    console.log(`📝 Finding similar texts for: ${filePath}`)
+
+    // 유사한 텍스트 검색
+    const similarTexts = await textAnalyzer.findSimilarTexts(
+      filePath,
+      limit,
+      threshold
+    )
+
+    console.log(`✅ Found ${similarTexts.length} similar texts`)
+
+    return NextResponse.json({
+      success: true,
+      query: {
+        filePath,
+        fileType: 'text',
+        limit,
+        threshold,
+      },
+      recommendations: similarTexts.map((result) => ({
+        file: {
+          path: result.file.filePath,
+          name: result.file.filePath.split('/').pop(),
+          type: 'text',
+          metadata: result.file.metadata,
+        },
+        similarity: Math.round(result.similarity * 100), // 백분율로 변환
+        confidence: (result.file.metadata as any)?.confidence || 0,
+        analysis: {
+          modelName: result.file.modelName,
+          extractedAt: result.file.extractedAt,
+          embeddingDimensions: result.file.embedding.length,
+          wordCount: (result.file.metadata as any)?.wordCount || 0,
+          charCount: (result.file.metadata as any)?.charCount || 0,
+          language: (result.file.metadata as any)?.language || 'unknown',
+          summary: (result.file.metadata as any)?.summary || '',
+          processingTime: (result.file.metadata as any)?.processingTime || 0,
+        },
+      })),
+      total: similarTexts.length,
+      processingInfo: {
+        analyzer: textAnalyzer.getModelInfo().name,
+        method: textAnalyzer.getModelInfo().useLocalModel
+          ? 'local_text_embeddings'
+          : 'openai_embeddings',
+        threshold: threshold,
+      },
+    })
+  } catch (error) {
+    console.error('Text recommendations error:', error)
+
+    if (
+      (error as Error).message?.includes('not found') ||
+      (error as Error).message?.includes('does not exist')
+    ) {
+      return NextResponse.json(
+        { error: 'Text file not found or inaccessible' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json(
+      {
+        error: 'Failed to generate text recommendations',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    )
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -118,35 +270,84 @@ export async function POST(request: NextRequest) {
 
 async function handleBatchAnalysis(files: string[], _options: any) {
   try {
-    const imageAnalyzer = await getImageAnalyzer()
     const imageFiles = files.filter((file) => isImage(file))
+    const videoFiles = files.filter((file) => isVideo(file))
+    const textFiles = files.filter((file) => isText(file))
 
-    if (imageFiles.length === 0) {
+    let allResults: any[] = []
+    let totalProcessed = 0
+
+    if (
+      imageFiles.length === 0 &&
+      videoFiles.length === 0 &&
+      textFiles.length === 0
+    ) {
       return NextResponse.json({
         success: true,
-        message: 'No image files to analyze',
+        message: 'No image, video, or text files to analyze',
         processed: 0,
         total: files.length,
       })
     }
 
-    // 배치 분석 시작 (비동기적으로 처리)
-    const results = await imageAnalyzer.analyzeBatch(
-      imageFiles,
-      (completed, total, currentFile) => {
-        console.log(`Progress: ${completed}/${total} - ${currentFile}`)
-      }
-    )
+    // 이미지 배치 분석
+    if (imageFiles.length > 0) {
+      console.log(`🖼️ Analyzing ${imageFiles.length} image files...`)
+      const imageAnalyzer = await getImageAnalyzer()
+      const imageResults = await imageAnalyzer.analyzeBatch(
+        imageFiles,
+        (completed, total, currentFile) => {
+          console.log(`Image Progress: ${completed}/${total} - ${currentFile}`)
+        }
+      )
+      allResults.push(...imageResults)
+      totalProcessed += imageResults.length
+    }
+
+    // 비디오 배치 분석
+    if (videoFiles.length > 0) {
+      console.log(`🎬 Analyzing ${videoFiles.length} video files...`)
+      const videoAnalyzer = await getVideoAnalyzer()
+      const videoResults = await videoAnalyzer.analyzeBatch(
+        videoFiles,
+        (completed, total, currentFile) => {
+          console.log(`Video Progress: ${completed}/${total} - ${currentFile}`)
+        }
+      )
+      allResults.push(...videoResults)
+      totalProcessed += videoResults.length
+    }
+
+    // 텍스트 배치 분석
+    if (textFiles.length > 0) {
+      console.log(`📝 Analyzing ${textFiles.length} text files...`)
+      const textAnalyzer = await getTextAnalyzer()
+      const textResults = await textAnalyzer.analyzeBatch(
+        textFiles,
+        (completed, total, currentFile) => {
+          console.log(`Text Progress: ${completed}/${total} - ${currentFile}`)
+        }
+      )
+      allResults.push(...textResults)
+      totalProcessed += textResults.length
+    }
 
     return NextResponse.json({
       success: true,
-      processed: results.length,
-      total: imageFiles.length,
-      results: results.map((r) => ({
+      processed: totalProcessed,
+      total: imageFiles.length + videoFiles.length + textFiles.length,
+      breakdown: {
+        images: imageFiles.length,
+        videos: videoFiles.length,
+        texts: textFiles.length,
+      },
+      results: allResults.map((r) => ({
         filePath: r.filePath,
+        fileType: r.fileType,
         modelName: r.modelName,
         embeddingDimensions: r.embedding.length,
         extractedAt: r.extractedAt,
+        metadata: r.metadata,
       })),
     })
   } catch (error) {

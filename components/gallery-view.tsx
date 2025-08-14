@@ -1,16 +1,22 @@
 'use client'
 
-import { Folder, Play, ImageIcon, FileText, File } from 'lucide-react'
+import { Folder, Play, ImageIcon, FileText, File, Brain } from 'lucide-react'
 import Image from 'next/image'
 import type { FileItem } from '@/types'
 import { useSettings } from '@/contexts/SettingsContext'
+import { Button } from '@/components/ui/button'
 
 interface GalleryViewProps {
   files: FileItem[]
   onFileClick: (file: FileItem) => void
+  onFindSimilar?: (filePath: string) => void
 }
 
-export default function GalleryView({ files, onFileClick }: GalleryViewProps) {
+export default function GalleryView({
+  files,
+  onFileClick,
+  onFindSimilar,
+}: GalleryViewProps) {
   const { settings } = useSettings()
 
   // 썸네일 크기에 따른 그리드 컬럼 수 설정
@@ -45,6 +51,14 @@ export default function GalleryView({ files, onFileClick }: GalleryViewProps) {
     const sizes = ['B', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(1024))
     return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`
+  }
+
+  const handleSimilarClick = (
+    e: React.MouseEvent<HTMLButtonElement>,
+    filePath: string
+  ) => {
+    e.stopPropagation() // Prevent onFileClick from firing
+    onFindSimilar?.(filePath)
   }
 
   const renderFilePreview = (file: FileItem) => {
@@ -131,6 +145,17 @@ export default function GalleryView({ files, onFileClick }: GalleryViewProps) {
         >
           <div className="aspect-video bg-gray-700 relative overflow-hidden">
             {renderFilePreview(file)}
+            {file.mediaType === 'image' && onFindSimilar && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-2 left-2 bg-black/50 text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                title="유사한 이미지 찾기"
+                onClick={(e) => handleSimilarClick(e, file.path)}
+              >
+                <Brain className="w-4 h-4" />
+              </Button>
+            )}
           </div>
           <div className="p-3">
             <h3

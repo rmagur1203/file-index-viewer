@@ -46,6 +46,7 @@
     "@radix-ui/react-toggle": "1.1.1",
     "@radix-ui/react-toggle-group": "1.1.1",
     "@radix-ui/react-tooltip": "1.1.6",
+    "@tensorflow/tfjs-node": "^4.22.0",
     "@types/better-sqlite3": "^7.6.13",
     "@types/fluent-ffmpeg": "^2.1.27",
     "@types/react-pdf": "^7.0.0",
@@ -66,6 +67,7 @@
     "lucide-react": "^0.294.0",
     "next": "15.4.6",
     "next-themes": "^0.4.4",
+    "node-fetch": "^2.7.0",
     "nuqs": "2.4.3",
     "pdfjs-dist": "5.3.31",
     "react": "^18",
@@ -78,8 +80,6 @@
     "sharp": "^0.34.3",
     "sonner": "^1.7.1",
     "sqlite-vec": "^0.1.2",
-    "@tensorflow/tfjs": "^4.22.0",
-    "@tensorflow/tfjs-node": "^4.22.0",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.6",
@@ -100,6 +100,7 @@
   "packageManager": "pnpm@10.5.2+sha512.da9dc28cd3ff40d0592188235ab25d3202add8a207afbedc682220e4a0029ffbff4562102b9e6e46b4e3f9e8bd53e6d05de48544b0c57d4b0179e22c76d1199b",
   "pnpm": {
     "onlyBuiltDependencies": [
+      "@tensorflow/tfjs-node",
       "better-sqlite3",
       "ffmpeg-static"
     ]
