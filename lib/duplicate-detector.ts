@@ -1,7 +1,7 @@
 import { createHash } from 'crypto'
 import { promises as fs } from 'fs'
 import path from 'path'
-import { isImage, isVideo } from './utils'
+import { isImage, isVideo, isText } from './utils'
 import {
   extractVideoFingerprint,
   calculateVideoSimilarity,
@@ -131,7 +131,7 @@ export async function scanMediaFiles(
           count += await countFiles(entryPath)
         } else if (
           entry.isFile() &&
-          (isImage(entry.name) || isVideo(entry.name))
+          (isImage(entry.name) || isVideo(entry.name) || isText(entry.name))
         ) {
           count++
         }
@@ -162,7 +162,9 @@ export async function scanMediaFiles(
           await scanDir(entryPath)
         } else if (
           entry.isFile() &&
-          (isImage(normalizedName) || isVideo(normalizedName))
+          (isImage(normalizedName) ||
+            isVideo(normalizedName) ||
+            isText(normalizedName))
         ) {
           try {
             const stats = await fs.stat(entryPath)

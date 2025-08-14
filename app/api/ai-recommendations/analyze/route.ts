@@ -3,13 +3,17 @@ import { VIDEO_ROOT } from '@/lib/config'
 // import { safePath } from '@/lib/sudo-fs'
 import { scanMediaFiles } from '@/lib/duplicate-detector'
 import { getImageAnalyzer } from '@/lib/ai-image-analyzer'
+import { getVideoAnalyzer } from '@/lib/ai-video-analyzer'
+import { getTextAnalyzer } from '@/lib/ai-text-analyzer'
 import { getVectorCache } from '@/lib/vector-cache'
-import { isImage } from '@/lib/utils'
+import { isImage, isVideo, isText } from '@/lib/utils'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const fileTypes = searchParams.get('fileTypes')?.split(',') || ['image']
   const forceReanalyze = searchParams.get('forceReanalyze') === 'true'
+
+  console.log('fileTypes', fileTypes)
 
   // Server-Sent Events 스트림 설정
   const encoder = new TextEncoder()
@@ -48,10 +52,11 @@ export async function GET(request: NextRequest) {
           message: `총 ${files.length}개 파일 발견, AI 분석 대상 필터링 중...`,
         })
 
-        // 분석할 파일 필터링
+        // 분석할 파일 필터링 (이미지/비디오/텍스트)
         const analysisTargets = files.filter((file) => {
           if (fileTypes.includes('image') && isImage(file.name)) return true
-          // TODO: 비디오, 텍스트 파일 필터링 추가
+          if (fileTypes.includes('video') && isVideo(file.name)) return true
+          if (fileTypes.includes('text') && isText(file.name)) return true
           return false
         })
 
@@ -78,7 +83,13 @@ export async function GET(request: NextRequest) {
           return
         }
 
-        // 이미지 분석기 초기화
+        // 공통 카운터 및 리소스
+        let analyzedCount = 0
+        let newAnalysisCount = 0
+        let cachedCount = 0
+        const vectorCache = await getVectorCache()
+
+        // 이미지 분석기 초기화 및 처리
         if (fileTypes.includes('image')) {
           sendEvent({
             step: 'model_loading',
@@ -87,17 +98,12 @@ export async function GET(request: NextRequest) {
           })
 
           const imageAnalyzer = await getImageAnalyzer()
-          const vectorCache = await getVectorCache()
 
           sendEvent({
             step: 'analyzing',
             progress: 45,
             message: 'AI 분석 시작...',
           })
-
-          let analyzedCount = 0
-          let newAnalysisCount = 0
-          let cachedCount = 0
 
           // 배치 분석 실행
           const imageFiles = analysisTargets.filter((file) =>
@@ -138,23 +144,122 @@ export async function GET(request: NextRequest) {
               })
             }
           )
+        }
 
-          // 통계 정보 수집
-          const stats = await vectorCache.getStats()
+        // 비디오 분석기 초기화 및 처리
+        if (fileTypes.includes('video')) {
+          sendEvent({
+            step: 'model_loading',
+            progress: 40,
+            message: '비디오 AI 모델 로딩 중...',
+          })
+
+          const videoAnalyzer = await getVideoAnalyzer()
 
           sendEvent({
-            step: 'completed',
-            progress: 100,
-            message: 'AI 분석 완료!',
-            result: {
-              totalFiles: files.length,
-              analyzedFiles: analyzedCount,
-              newAnalysis: newAnalysisCount,
-              cachedResults: cachedCount,
-              vectorStats: stats,
-            },
+            step: 'analyzing',
+            progress: 45,
+            message: '비디오 분석 시작...',
           })
+
+          const videoFiles = analysisTargets.filter((file) =>
+            isVideo(file.name)
+          )
+          const videoPaths = videoFiles.map((file) => file.path)
+
+          await videoAnalyzer.analyzeBatch(
+            videoPaths,
+            async (completed, total, currentFile) => {
+              const progressPercent = 45 + Math.round((completed / total) * 50)
+              const existingEmbedding = await vectorCache.getEmbeddingByPath(
+                currentFile,
+                videoAnalyzer.getModelInfo().name
+              )
+              if (existingEmbedding && !forceReanalyze) {
+                cachedCount++
+              } else {
+                newAnalysisCount++
+              }
+              analyzedCount++
+              sendEvent({
+                step: 'analyzing',
+                progress: progressPercent,
+                message: `비디오 분석 진행 중: ${completed}/${total}`,
+                details: {
+                  currentFile: currentFile.split('/').pop(),
+                  completed,
+                  total,
+                  newAnalysis: newAnalysisCount,
+                  cached: cachedCount,
+                },
+              })
+            }
+          )
         }
+
+        // 텍스트 분석기 초기화 및 처리
+        if (fileTypes.includes('text')) {
+          sendEvent({
+            step: 'model_loading',
+            progress: 40,
+            message: '텍스트 AI 모델 로딩 중...',
+          })
+
+          const textAnalyzer = await getTextAnalyzer()
+
+          sendEvent({
+            step: 'analyzing',
+            progress: 45,
+            message: '텍스트 분석 시작...',
+          })
+
+          const textFiles = analysisTargets.filter((file) => isText(file.name))
+          const textPaths = textFiles.map((file) => file.path)
+
+          await textAnalyzer.analyzeBatch(
+            textPaths,
+            async (completed, total, currentFile) => {
+              const progressPercent = 45 + Math.round((completed / total) * 50)
+              const existingEmbedding = await vectorCache.getEmbeddingByPath(
+                currentFile,
+                textAnalyzer.getModelInfo().name
+              )
+              if (existingEmbedding && !forceReanalyze) {
+                cachedCount++
+              } else {
+                newAnalysisCount++
+              }
+              analyzedCount++
+              sendEvent({
+                step: 'analyzing',
+                progress: progressPercent,
+                message: `텍스트 분석 진행 중: ${completed}/${total}`,
+                details: {
+                  currentFile: currentFile.split('/').pop(),
+                  completed,
+                  total,
+                  newAnalysis: newAnalysisCount,
+                  cached: cachedCount,
+                },
+              })
+            }
+          )
+        }
+
+        // 통계 정보 수집 및 완료 이벤트 전송
+        const finalStats = await vectorCache.getStats()
+        sendEvent({
+          step: 'completed',
+          progress: 100,
+          message: 'AI 분석 완료!',
+          result: {
+            totalFiles: files.length,
+            analyzedFiles: analyzedCount,
+            newAnalysis: newAnalysisCount,
+            cachedResults: cachedCount,
+            vectorStats: finalStats,
+          },
+        })
 
         controller.close()
       } catch (error) {
