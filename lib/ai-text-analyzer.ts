@@ -3,9 +3,81 @@ import path from 'path'
 import { createHash } from 'crypto'
 import { getVectorCache, AIEmbedding } from './vector-cache'
 import { pipeline, env, Pipeline } from '@xenova/transformers'
-import pdf from 'pdf-parse'
+import pdfParse from 'pdf-parse'
+import { createWorker, OEM, PSM } from 'tesseract.js'
+import { Canvas, createCanvas, Image, ImageData } from 'canvas'
+import 'pdfjs-dist/legacy/build/pdf.mjs' // Import for side-effects
+import 'pdfjs-dist/legacy/build/pdf.worker.mjs' // Import for side-effects
+
+// Node.js 환경에서 pdf.js가 필요로 하는 DOM API 및 헬퍼를 설정합니다.
+// 이는 pdfjs-dist의 'node_utils.mjs' 헬퍼 스크립트의 핵심 로직을 재현한 것입니다.
+if (typeof window === 'undefined') {
+  const globalScope = globalThis as any
+
+  // DOMMatrix 폴리필
+  if (!globalScope.DOMMatrix) {
+    class DOMMatrix {
+      private m: number[]
+      constructor(init?: number[] | string) {
+        this.m = Array.isArray(init) ? [...init] : [1, 0, 0, 1, 0, 0]
+      }
+      translate(tx: number, ty: number): DOMMatrix {
+        return new DOMMatrix([
+          this.m[0],
+          this.m[1],
+          this.m[2],
+          this.m[3],
+          this.m[4] + tx * this.m[0] + ty * this.m[2],
+          this.m[5] + tx * this.m[1] + ty * this.m[3],
+        ])
+      }
+      // pdf.js 렌더링에 필요한 다른 DOMMatrix 메소드들을 여기에 추가할 수 있습니다.
+    }
+    globalScope.DOMMatrix = DOMMatrix
+  }
+
+  // node-canvas의 Image와 ImageData를 전역으로 설정
+  globalScope.Image = Image
+  globalScope.ImageData = ImageData
+
+  // Canvas 객체에서 createImageData를 사용할 수 있도록 래핑
+  const originalCreateCanvas = createCanvas
+  ;(globalScope as any).createCanvas = (width: number, height: number) => {
+    const canvas = originalCreateCanvas(width, height)
+    ;(canvas as any).createImageData = function (
+      width: number,
+      height: number
+    ) {
+      return new ImageData(width, height)
+    }
+    return canvas
+  }
+}
 
 env.allowLocalModels = true
+
+class NodeCanvasFactory {
+  create(width: number, height: number) {
+    const canvas = createCanvas(width, height)
+    const context = canvas.getContext('2d')
+    return {
+      canvas,
+      context,
+    }
+  }
+
+  reset(canvasAndContext: any, width: number, height: number) {
+    canvasAndContext.canvas.width = width
+    canvasAndContext.canvas.height = height
+  }
+
+  destroy(canvasAndContext: any) {
+    canvasAndContext.canvas.width = 0
+    canvasAndContext.canvas.height = 0
+    canvasAndContext.canvas = null
+    canvasAndContext.context = null
+  }
+}
 
 export interface TextAnalysisResult {
   embedding: number[]
@@ -37,7 +109,7 @@ export class AITextAnalyzer {
   private modelName = 'text-embedding-ada-002'
   private apiKey: string | null = null
   private useLocalModel = false
-  private localEmbeddingPipeline: Pipeline | null = null
+  private localEmbeddingPipeline: any | null = null
 
   /**
    * 분석기 초기화
@@ -110,22 +182,26 @@ export class AITextAnalyzer {
       if (ext === '.pdf') {
         const dataBuffer = await fs.readFile(filePath)
         try {
-          const data = await pdf(dataBuffer)
-          content = data.text
-        } catch (pdfExtractError) {
-          console.warn(
-            `⚠️ pdf-extraction failed for ${filePath}:`,
-            pdfExtractError
-          )
+          const data = await pdfParse(dataBuffer)
+          if (data.text && data.text.trim().length > 0) {
+            content = data.text
+          }
+        } catch (pdfParseError) {
+          console.warn(`⚠️ pdf-parse failed for ${filePath}:`, pdfParseError)
           content = ''
         }
 
-        // If pdf-extraction returns no text, try pdftotext as a final fallback
+        // 텍스트 추출에 실패했다면 OCR 시도
         if (!content || content.trim().length === 0) {
           console.log(
-            `📝 pdf-extraction extracted no text, trying pdftotext fallback for ${filePath}`
+            `📝 pdf-parse found no text, attempting OCR for ${filePath}`
           )
-          content = await this.extractPdfTextWithPdftotext(dataBuffer)
+          try {
+            content = await this.extractPdfTextWithOcr(dataBuffer)
+          } catch (ocrError) {
+            console.error(`❌ OCR failed for ${filePath}:`, ocrError)
+            content = '' // OCR 실패 시 빈 내용으로 처리
+          }
         }
       } else {
         // For non-PDF files, read them as plain text
@@ -209,6 +285,66 @@ export class AITextAnalyzer {
     } catch {
       return ''
     }
+  }
+
+  private async extractPdfTextWithOcr(pdfBuffer: Buffer): Promise<string> {
+    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
+
+    // 환경에 따라 워커 설정
+    if (typeof window !== 'undefined') {
+      // 클라이언트 환경: 복사된 워커 파일 경로 지정
+      pdfjs.GlobalWorkerOptions.workerSrc =
+        '/_next/static/chunks/pdf.worker.mjs'
+    }
+
+    const canvasFactory = new NodeCanvasFactory()
+    // @ts-ignore
+    const loadingTask = pdfjs.getDocument({
+      data: new Uint8Array(pdfBuffer),
+      disableFontFace: true,
+      // 서버 환경에서는 워커를 명시적으로 비활성화
+      disableWorker: typeof window === 'undefined',
+      // Node.js 환경에서 canvas를 생성할 수 있도록 팩토리를 제공
+      canvasFactory,
+    })
+    const pdf = await loadingTask.promise
+    const numPages = pdf.numPages
+    let fullText = ''
+
+    const worker = await createWorker('kor+eng', OEM.LSTM_ONLY, {
+      // logger: (m) => console.log(m), // OCR 진행률 로깅
+    })
+    await worker.setParameters({
+      tessedit_pageseg_mode: PSM.AUTO_OSD,
+    })
+
+    console.log(`🚀 Starting OCR process for ${numPages} pages...`)
+
+    for (let i = 1; i <= numPages; i++) {
+      const page = await pdf.getPage(i)
+      const viewport = page.getViewport({ scale: 2.0 }) // 해상도를 높여 인식률 향상
+      const { canvas, context } = canvasFactory.create(
+        viewport.width,
+        viewport.height
+      )
+
+      await page.render({ canvasContext: context as any, viewport }).promise
+      const imageBuffer = (canvas as Canvas).toBuffer('image/png')
+
+      const {
+        data: { text },
+      } = await worker.recognize(imageBuffer)
+      fullText += text + '\n'
+      console.log(`🔍 OCR progress: Page ${i}/${numPages} completed.`)
+
+      // 메모리 정리
+      page.cleanup()
+      canvasFactory.destroy({ canvas, context })
+    }
+
+    await worker.terminate()
+    console.log('✅ OCR process finished.')
+    return fullText
   }
 
   /**
