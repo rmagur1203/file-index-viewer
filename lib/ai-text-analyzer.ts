@@ -40,18 +40,9 @@ if (typeof window === 'undefined') {
   globalScope.Image = Image
   globalScope.ImageData = ImageData
 
-  // Canvas 객체에서 createImageData를 사용할 수 있도록 래핑
-  const originalCreateCanvas = createCanvas
-  ;(globalScope as any).createCanvas = (width: number, height: number) => {
-    const canvas = originalCreateCanvas(width, height)
-    ;(canvas as any).createImageData = function (
-      width: number,
-      height: number
-    ) {
-      return new ImageData(width, height)
-    }
-    return canvas
-  }
+  // Canvas 및 createCanvas를 전역으로 설정
+  globalScope.Canvas = Canvas
+  globalScope.createCanvas = createCanvas
 }
 
 env.allowLocalModels = true
@@ -311,7 +302,7 @@ export class AITextAnalyzer {
     const numPages = pdf.numPages
     let fullText = ''
 
-    const worker = await createWorker('kor+eng', OEM.LSTM_ONLY, {
+    const worker = await createWorker(['kor', 'eng', 'osd'], OEM.LSTM_ONLY, {
       // logger: (m) => console.log(m), // OCR 진행률 로깅
     })
     await worker.setParameters({
@@ -328,7 +319,12 @@ export class AITextAnalyzer {
         viewport.height
       )
 
-      await page.render({ canvasContext: context as any, viewport }).promise
+      const renderContext = {
+        canvasContext: context,
+        viewport,
+        canvasFactory,
+      }
+      await page.render(renderContext).promise
       const imageBuffer = (canvas as Canvas).toBuffer('image/png')
 
       const {

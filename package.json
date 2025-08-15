@@ -72,7 +72,7 @@
     "node-fetch": "^2.7.0",
     "nuqs": "2.4.3",
     "pdf-parse": "^1.1.1",
-    "pdfjs-dist": "5.3.31",
+    "pdfjs-dist": "4.8.69",
     "react": "^18",
     "react-day-picker": "9.8.0",
     "react-dom": "^18",
