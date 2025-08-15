@@ -3,6 +3,7 @@ import path from 'path'
 import { createHash } from 'crypto'
 import { getVectorCache, AIEmbedding } from './vector-cache'
 import { pipeline, env, Pipeline } from '@xenova/transformers'
+import pdf from 'pdf-parse'
 
 env.allowLocalModels = true
 
@@ -108,28 +109,27 @@ export class AITextAnalyzer {
 
       if (ext === '.pdf') {
         const dataBuffer = await fs.readFile(filePath)
-        // 안정성을 위해 서버 사이드에서는 pdfjs-dist만 사용
-        content = await this.extractPdfTextWithPdfjs(dataBuffer)
-      } else {
         try {
-          // UTF-8로 먼저 시도
-          content = await fs.readFile(filePath, 'utf-8')
-        } catch (encodingError) {
-          // UTF-8 실패시 다른 인코딩 시도
-          try {
-            content = await fs.readFile(filePath, 'latin1')
-          } catch (fallbackError) {
-            console.warn(
-              `⚠️ Failed to read ${filePath} with standard encodings, using buffer`
-            )
-            const buffer = await fs.readFile(filePath)
-            content = buffer.toString(
-              'utf-8',
-              0,
-              Math.min(buffer.length, 10000)
-            ) // 처음 10KB만
-          }
+          const data = await pdf(dataBuffer)
+          content = data.text
+        } catch (pdfExtractError) {
+          console.warn(
+            `⚠️ pdf-extraction failed for ${filePath}:`,
+            pdfExtractError
+          )
+          content = ''
         }
+
+        // If pdf-extraction returns no text, try pdftotext as a final fallback
+        if (!content || content.trim().length === 0) {
+          console.log(
+            `📝 pdf-extraction extracted no text, trying pdftotext fallback for ${filePath}`
+          )
+          content = await this.extractPdfTextWithPdftotext(dataBuffer)
+        }
+      } else {
+        // For non-PDF files, read them as plain text
+        content = await fs.readFile(filePath, 'utf-8')
       }
 
       // 텍스트 정제
@@ -154,59 +154,6 @@ export class AITextAnalyzer {
       throw new Error(
         `Failed to extract text from ${filePath}: ${error instanceof Error ? error.message : String(error)}`
       )
-    }
-  }
-
-  /**
-   * pdfjs-dist를 이용한 PDF 텍스트 추출 폴백
-   */
-  private async extractPdfTextWithPdfjs(dataBuffer: Buffer): Promise<string> {
-    try {
-      // Node.js 환경에서는 반드시 legacy 빌드를 사용해야 안정적
-      const pdfjs: any = await import('pdfjs-dist/legacy/build/pdf.mjs')
-
-      // Node 환경에서 워커를 사용하지 않도록 설정 (일부 환경에서 에러 예방)
-      if (pdfjs.GlobalWorkerOptions) {
-        try {
-          pdfjs.GlobalWorkerOptions.workerSrc = undefined as any
-        } catch {}
-      }
-
-      const loadingTask = pdfjs.getDocument({
-        data: new Uint8Array(dataBuffer),
-        isEvalSupported: false,
-        useSystemFonts: true,
-        disableFontFace: true,
-      })
-      const doc = await loadingTask.promise
-      try {
-        let fullText = ''
-        for (let pageNum = 1; pageNum <= doc.numPages; pageNum++) {
-          const page = await doc.getPage(pageNum)
-          const textContent = await page.getTextContent()
-          const pageText = (textContent.items as any[])
-            .map((item: any) => (typeof item?.str === 'string' ? item.str : ''))
-            .join(' ')
-          fullText += pageText + '\n'
-        }
-        // pdfjs가 텍스트를 추출하지 못하는 스캔본의 경우 빈 문자열이 될 수 있음
-        if (fullText.trim().length > 0) {
-          return fullText
-        }
-        // 빈 결과면 외부 도구 폴백 시도
-        return await this.extractPdfTextWithPdftotext(dataBuffer)
-      } finally {
-        await doc.destroy()
-      }
-    } catch (fallbackError) {
-      // pdfjs 실패 시 외부 도구 폴백 시도
-      try {
-        return await this.extractPdfTextWithPdftotext(dataBuffer)
-      } catch (cliErr) {
-        throw new Error(
-          `pdfjs-dist extraction failed: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`
-        )
-      }
     }
   }
 

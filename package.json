@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "bash ./scripts/setup-pdfjs.sh",
+    "postinstall": "bash ./scripts/setup-pdfjs.sh && cp -f ./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs ./public/",
     "pm2:start": "pm2 start ecosystem.config.js --env production",
     "pm2:dev": "pm2 start ecosystem.config.js --env development",
     "pm2:stop": "pm2 stop file-index-viewer",
