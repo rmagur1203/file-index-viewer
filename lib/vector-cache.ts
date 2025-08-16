@@ -121,7 +121,7 @@ export class VectorCache {
       try {
         const createVectorTable = `
           CREATE VIRTUAL TABLE IF NOT EXISTS vec_embeddings USING vec0(
-            embedding float[384]
+            embedding float[1000]
           )
         `
         this.db.exec(createVectorTable)
@@ -145,7 +145,7 @@ export class VectorCache {
     for (const embedding of allEmbeddings) {
       try {
         const parsedEmbedding = JSON.parse(embedding.embedding_json)
-        if (parsedEmbedding.length !== 384) {
+        if (parsedEmbedding.length !== 1000) {
           idsToDelete.push(embedding.id)
         }
       } catch {
@@ -168,7 +168,7 @@ export class VectorCache {
     this.db.exec('DROP TABLE IF EXISTS vec_embeddings')
     this.db.exec(`
       CREATE VIRTUAL TABLE vec_embeddings USING vec0(
-        embedding float[384]
+        embedding float[1000]
       )
     `)
 
@@ -221,7 +221,7 @@ export class VectorCache {
 
       // sqlite-vec 테이블에도 저장 (사용 가능한 경우)
       if (this.vecLoaded) {
-        if (embedding.embedding.length !== 384) {
+        if (embedding.embedding.length !== 1000) {
           return // 차원이 다른 벡터는 저장하지 않음
         }
         try {
