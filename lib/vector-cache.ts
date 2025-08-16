@@ -64,7 +64,7 @@ export class VectorCache {
 
       // 테이블 생성
       await this.createTables()
-      await this.rebuildVectorTable()
+      await this.rebuildVectorTables()
     } catch (error) {
       console.error('Failed to initialize VectorCache:', error)
       throw error
@@ -119,33 +119,41 @@ export class VectorCache {
     // sqlite-vec 벡터 테이블 생성 (확장이 로딩된 경우)
     if (this.vecLoaded) {
       try {
-        const createVectorTable = `
-          CREATE VIRTUAL TABLE IF NOT EXISTS vec_embeddings USING vec0(
+        const createVectorTableMedia = `
+          CREATE VIRTUAL TABLE IF NOT EXISTS vec_embeddings_media USING vec0(
             embedding float[1000]
           )
         `
-        this.db.exec(createVectorTable)
-        console.log('✅ Vector table created with sqlite-vec')
+        this.db.exec(createVectorTableMedia)
+        const createVectorTableText = `
+          CREATE VIRTUAL TABLE IF NOT EXISTS vec_embeddings_text USING vec0(
+            embedding float[384]
+          )
+        `
+        this.db.exec(createVectorTableText)
+        console.log('✅ Vector tables created with sqlite-vec')
       } catch (error) {
-        console.warn('Failed to create vector table:', error)
+        console.warn('Failed to create vector tables:', error)
         this.vecLoaded = false
       }
     }
   }
 
-  async rebuildVectorTable(): Promise<void> {
+  async rebuildVectorTables(): Promise<void> {
     if (!this.db || !this.vecLoaded) return
 
     // 1. 차원이 맞지 않는 임베딩 찾기
     const allEmbeddings = this.db
-      .prepare('SELECT id, embedding_json FROM ai_embeddings')
-      .all() as { id: string; embedding_json: string }[]
+      .prepare('SELECT id, file_type, embedding_json FROM ai_embeddings')
+      .all() as { id: string; file_type: string; embedding_json: string }[]
 
     const idsToDelete: string[] = []
     for (const embedding of allEmbeddings) {
       try {
         const parsedEmbedding = JSON.parse(embedding.embedding_json)
-        if (parsedEmbedding.length !== 1000) {
+        const expectedDim =
+          embedding.file_type === 'text' ? 384 : 1000
+        if (parsedEmbedding.length !== expectedDim) {
           idsToDelete.push(embedding.id)
         }
       } catch {
@@ -165,34 +173,52 @@ export class VectorCache {
     }
 
     // 3. 가상 테이블 초기화 및 재생성
-    this.db.exec('DROP TABLE IF EXISTS vec_embeddings')
+    this.db.exec('DROP TABLE IF EXISTS vec_embeddings_media')
+    this.db.exec('DROP TABLE IF EXISTS vec_embeddings_text')
     this.db.exec(`
-      CREATE VIRTUAL TABLE vec_embeddings USING vec0(
+      CREATE VIRTUAL TABLE vec_embeddings_media USING vec0(
         embedding float[1000]
+      )
+    `)
+    this.db.exec(`
+      CREATE VIRTUAL TABLE vec_embeddings_text USING vec0(
+        embedding float[384]
       )
     `)
 
     // 4. 정리된 데이터를 바탕으로 가상 테이블 다시 채우기
     const embeddingsToRepopulate = this.db
-      .prepare('SELECT rowid, embedding_json FROM ai_embeddings')
-      .all() as { rowid: bigint; embedding_json: string }[]
+      .prepare('SELECT rowid, file_type, embedding_json FROM ai_embeddings')
+      .all() as {
+      rowid: bigint
+      file_type: string
+      embedding_json: string
+    }[]
 
     if (embeddingsToRepopulate.length > 0) {
       console.log(
-        ` Rebuilding vector table with ${embeddingsToRepopulate.length} items...`
+        ` Rebuilding vector tables with ${embeddingsToRepopulate.length} items...`
       )
 
-      const insert = this.db.prepare(
-        'INSERT INTO vec_embeddings(rowid, embedding) VALUES (?, ?)'
+      const insertMedia = this.db.prepare(
+        'INSERT INTO vec_embeddings_media(rowid, embedding) VALUES (?, ?)'
       )
+      const insertText = this.db.prepare(
+        'INSERT INTO vec_embeddings_text(rowid, embedding) VALUES (?, ?)'
+      )
+
       const insertMany = this.db.transaction((embeddings) => {
         for (const embedding of embeddings) {
-          insert.run(embedding.rowid, embedding.embedding_json)
+          if (embedding.file_type === 'text') {
+            insertText.run(embedding.rowid, embedding.embedding_json)
+          } else {
+            insertMedia.run(embedding.rowid, embedding.embedding_json)
+          }
         }
       })
       insertMany(embeddingsToRepopulate)
     }
-    console.log('✅ Vector table rebuild complete')
+    console.log('✅ Vector tables rebuild complete')
   }
 
   /**
@@ -221,9 +247,19 @@ export class VectorCache {
 
       // sqlite-vec 테이블에도 저장 (사용 가능한 경우)
       if (this.vecLoaded) {
-        if (embedding.embedding.length !== 1000) {
+        const isText = embedding.fileType === 'text'
+        const expectedDim = isText ? 384 : 1000
+        const targetTable = isText
+          ? 'vec_embeddings_text'
+          : 'vec_embeddings_media'
+
+        if (embedding.embedding.length !== expectedDim) {
+          console.warn(
+            `Skipping embedding with mismatched dimension for ${embedding.filePath}. Expected ${expectedDim}, got ${embedding.embedding.length}`
+          )
           return // 차원이 다른 벡터는 저장하지 않음
         }
+
         try {
           const { rowid } = this.db!.prepare(
             'SELECT rowid FROM ai_embeddings WHERE id = ?'
@@ -231,7 +267,7 @@ export class VectorCache {
 
           if (rowid) {
             const vectorQuery = `
-              INSERT OR REPLACE INTO vec_embeddings(rowid, embedding) 
+              INSERT OR REPLACE INTO ${targetTable}(rowid, embedding) 
               VALUES (?, ?)
             `
             this.db!.prepare(vectorQuery).run(
@@ -240,7 +276,7 @@ export class VectorCache {
             )
           }
         } catch (error) {
-          console.warn('Failed to save to vector table:', error)
+          console.warn(`Failed to save to vector table ${targetTable}:`, error)
         }
       }
     })
@@ -283,17 +319,35 @@ export class VectorCache {
     threshold: number = 0.7
   ): Promise<SimilarityResult[]> {
     try {
+      const isText = fileType === 'text'
+      const targetTable = isText
+        ? 'vec_embeddings_text'
+        : 'vec_embeddings_media'
+      const expectedDim = isText ? 384 : 1000
+
+      if (queryEmbedding.length !== expectedDim) {
+        console.warn(
+          `Query embedding dimension mismatch. Expected ${expectedDim}, got ${queryEmbedding.length}. Falling back to cosine similarity.`
+        )
+        return this.findSimilarWithCosine(
+          queryEmbedding,
+          fileType,
+          limit,
+          threshold
+        )
+      }
+
       let query = `
         SELECT 
           e.id, e.file_path, e.file_type, e.model_name, 
           e.embedding_json, e.extracted_at, e.metadata_json,
           vec.distance
-        FROM vec_embeddings vec
+        FROM ${targetTable} vec
         JOIN ai_embeddings e ON e.rowid = vec.rowid
         WHERE vec.embedding MATCH ? AND k = ?
       `
 
-      const params: any[] = [JSON.stringify(queryEmbedding), limit]
+      const params: any[] = [JSON.stringify(queryEmbedding), limit * 2] // 더 많은 결과를 가져와서 필터링
 
       if (fileType) {
         query += ` AND e.file_type = ?`
@@ -451,8 +505,10 @@ export class VectorCache {
       if (this.vecLoaded) {
         try {
           const placeholders = rowIdsToDelete.map(() => '?').join(',')
-          const deleteVecQuery = `DELETE FROM vec_embeddings WHERE rowid IN (${placeholders})`
+          const deleteVecQuery = `DELETE FROM vec_embeddings_media WHERE rowid IN (${placeholders})`
           this.db!.prepare(deleteVecQuery).run(...rowIdsToDelete)
+          const deleteVecQueryText = `DELETE FROM vec_embeddings_text WHERE rowid IN (${placeholders})`
+          this.db!.prepare(deleteVecQueryText).run(...rowIdsToDelete)
         } catch (error) {
           console.warn('Failed to clear from vector table:', error)
         }
