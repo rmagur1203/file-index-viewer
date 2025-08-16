@@ -44,17 +44,17 @@ export async function GET(request: NextRequest) {
 
     console.log(`[Debug Endpoint] Analyzing file: ${filePath}`)
     const result = await analyzer.extractFeatures(filePath)
-    const text = result?.text || ''
-    const metadata = result?.metadata
+    console.log(result)
+    const text = result?.extractedText || ''
 
     const pdftotextStatus = await checkPdftotext()
 
     return NextResponse.json({
       filePath,
       pdftotextStatus,
-      wordCount: metadata?.wordCount ?? 0,
-      charCount: metadata?.charCount ?? 0,
-      language: metadata?.language ?? 'unknown',
+      wordCount: result?.wordCount ?? 0,
+      charCount: result?.charCount ?? 0,
+      language: result?.language ?? 'unknown',
       extractedTextSnippet:
         text.substring(0, 500) + (text.length > 500 ? '...' : ''),
     })

@@ -815,9 +815,7 @@ export async function getVideoAnalyzer(): Promise<AIVideoAnalyzer> {
     videoAnalyzerInstance = new AIVideoAnalyzer()
   }
 
-  if (!videoAnalyzerInstance.isInitialized) {
-    await videoAnalyzerInstance.initialize()
-  }
+  await videoAnalyzerInstance.initialize()
 
   return videoAnalyzerInstance
 }

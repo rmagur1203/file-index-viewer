@@ -282,11 +282,11 @@ export class AITextAnalyzer {
     const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
 
     // 환경에 따라 워커 설정
-    if (typeof window !== 'undefined') {
-      // 클라이언트 환경: 복사된 워커 파일 경로 지정
-      pdfjs.GlobalWorkerOptions.workerSrc =
-        '/_next/static/chunks/pdf.worker.mjs'
-    }
+    // if (typeof window !== 'undefined') {
+    //   // 클라이언트 환경: 복사된 워커 파일 경로 지정
+    //   pdfjs.GlobalWorkerOptions.workerSrc =
+    //     '/_next/static/chunks/pdf.worker.mjs'
+    // }
 
     const canvasFactory = new NodeCanvasFactory()
     // @ts-ignore
