@@ -167,9 +167,9 @@ export async function GET(request: NextRequest) {
           )
           const videoPaths = videoFiles.map((file) => file.path)
 
-          await videoAnalyzer.analyzeBatch(
+          await videoAnalyzer.analyzeBatchAdvanced(
             videoPaths,
-            async (completed, total, currentFile) => {
+            async (completed, total, currentFile, stats) => {
               const progressPercent = 45 + Math.round((completed / total) * 50)
               const existingEmbedding = await vectorCache.getEmbeddingByPath(
                 currentFile,
@@ -191,6 +191,10 @@ export async function GET(request: NextRequest) {
                   total,
                   newAnalysis: newAnalysisCount,
                   cached: cachedCount,
+                  concurrency: stats?.concurrency,
+                  memoryUsage: stats?.memoryUsage
+                    ? `${stats.memoryUsage.toFixed(1)}%`
+                    : 'N/A',
                 },
               })
             }

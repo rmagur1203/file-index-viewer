@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3'
 import path from 'path'
 import { promises as fs } from 'fs'
+import * as sqliteVec from 'sqlite-vec'
 
 export interface AIEmbedding {
   id: string
@@ -50,6 +51,7 @@ export class VectorCache {
 
       // 데이터베이스 열기
       this.db = new Database(this.dbPath)
+      this.db.defaultSafeIntegers(true)
 
       // sqlite-vec 확장 로딩 시도
       try {
@@ -62,6 +64,7 @@ export class VectorCache {
 
       // 테이블 생성
       await this.createTables()
+      await this.rebuildVectorTable()
     } catch (error) {
       console.error('Failed to initialize VectorCache:', error)
       throw error
@@ -75,21 +78,12 @@ export class VectorCache {
     if (!this.db) throw new Error('Database not initialized')
 
     try {
-      // sqlite-vec 확장 로딩 시도
-      this.db.loadExtension('sqlite-vec')
-      this.vecLoaded = true
-    } catch {
       // Node.js에서 sqlite-vec 모듈 동적 로딩 시도
-      try {
-        const sqliteVec = require('sqlite-vec')
-        if (sqliteVec && sqliteVec.load) {
-          sqliteVec.load(this.db)
-          this.vecLoaded = true
-        }
-      } catch {
-        console.warn('sqlite-vec module not found, using fallback methods')
-        this.vecLoaded = false
-      }
+      sqliteVec.load(this.db)
+      this.vecLoaded = true
+    } catch (error) {
+      console.warn('sqlite-vec module not found, using fallback methods', error)
+      this.vecLoaded = false
     }
   }
 
@@ -127,7 +121,7 @@ export class VectorCache {
       try {
         const createVectorTable = `
           CREATE VIRTUAL TABLE IF NOT EXISTS vec_embeddings USING vec0(
-            embedding float[1024]
+            embedding float[384]
           )
         `
         this.db.exec(createVectorTable)
@@ -137,6 +131,68 @@ export class VectorCache {
         this.vecLoaded = false
       }
     }
+  }
+
+  async rebuildVectorTable(): Promise<void> {
+    if (!this.db || !this.vecLoaded) return
+
+    // 1. 차원이 맞지 않는 임베딩 찾기
+    const allEmbeddings = this.db
+      .prepare('SELECT id, embedding_json FROM ai_embeddings')
+      .all() as { id: string; embedding_json: string }[]
+
+    const idsToDelete: string[] = []
+    for (const embedding of allEmbeddings) {
+      try {
+        const parsedEmbedding = JSON.parse(embedding.embedding_json)
+        if (parsedEmbedding.length !== 384) {
+          idsToDelete.push(embedding.id)
+        }
+      } catch {
+        // JSON 파싱 실패 시에도 삭제 대상에 추가
+        idsToDelete.push(embedding.id)
+      }
+    }
+
+    // 2. 오래된 임베딩 데이터 삭제
+    if (idsToDelete.length > 0) {
+      console.warn(
+        `🗑️ Deleting ${idsToDelete.length} embeddings with mismatched dimensions...`
+      )
+      const placeholders = idsToDelete.map(() => '?').join(',')
+      const deleteQuery = `DELETE FROM ai_embeddings WHERE id IN (${placeholders})`
+      this.db.prepare(deleteQuery).run(...idsToDelete)
+    }
+
+    // 3. 가상 테이블 초기화 및 재생성
+    this.db.exec('DROP TABLE IF EXISTS vec_embeddings')
+    this.db.exec(`
+      CREATE VIRTUAL TABLE vec_embeddings USING vec0(
+        embedding float[384]
+      )
+    `)
+
+    // 4. 정리된 데이터를 바탕으로 가상 테이블 다시 채우기
+    const embeddingsToRepopulate = this.db
+      .prepare('SELECT rowid, embedding_json FROM ai_embeddings')
+      .all() as { rowid: bigint; embedding_json: string }[]
+
+    if (embeddingsToRepopulate.length > 0) {
+      console.log(
+        ` Rebuilding vector table with ${embeddingsToRepopulate.length} items...`
+      )
+
+      const insert = this.db.prepare(
+        'INSERT INTO vec_embeddings(rowid, embedding) VALUES (?, ?)'
+      )
+      const insertMany = this.db.transaction((embeddings) => {
+        for (const embedding of embeddings) {
+          insert.run(embedding.rowid, embedding.embedding_json)
+        }
+      })
+      insertMany(embeddingsToRepopulate)
+    }
+    console.log('✅ Vector table rebuild complete')
   }
 
   /**
@@ -165,17 +221,24 @@ export class VectorCache {
 
       // sqlite-vec 테이블에도 저장 (사용 가능한 경우)
       if (this.vecLoaded) {
+        if (embedding.embedding.length !== 384) {
+          return // 차원이 다른 벡터는 저장하지 않음
+        }
         try {
-          const vectorQuery = `
-            INSERT OR REPLACE INTO vec_embeddings(rowid, embedding) 
-            VALUES (?, ?)
-          `
-          // rowid를 해시값으로 사용 (일관성 유지)
-          const rowId = this.hashStringToNumber(embedding.id)
-          this.db!.prepare(vectorQuery).run(
-            rowId,
-            JSON.stringify(embedding.embedding)
-          )
+          const { rowid } = this.db!.prepare(
+            'SELECT rowid FROM ai_embeddings WHERE id = ?'
+          ).get(embedding.id) as { rowid: bigint }
+
+          if (rowid) {
+            const vectorQuery = `
+              INSERT OR REPLACE INTO vec_embeddings(rowid, embedding) 
+              VALUES (?, ?)
+            `
+            this.db!.prepare(vectorQuery).run(
+              rowid,
+              JSON.stringify(embedding.embedding)
+            )
+          }
         } catch (error) {
           console.warn('Failed to save to vector table:', error)
         }
@@ -183,19 +246,6 @@ export class VectorCache {
     })
 
     transaction()
-  }
-
-  /**
-   * 문자열을 숫자 해시로 변환 (rowid용)
-   */
-  private hashStringToNumber(str: string): number {
-    let hash = 0
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i)
-      hash = (hash << 5) - hash + char
-      hash = hash & hash // 32bit 정수로 변환
-    }
-    return Math.abs(hash)
   }
 
   /**
@@ -240,18 +290,15 @@ export class VectorCache {
           vec.distance
         FROM vec_embeddings vec
         JOIN ai_embeddings e ON e.rowid = vec.rowid
-        WHERE vec.embedding MATCH ?
+        WHERE vec.embedding MATCH ? AND k = ?
       `
 
-      const params: any[] = [JSON.stringify(queryEmbedding)]
+      const params: any[] = [JSON.stringify(queryEmbedding), limit]
 
       if (fileType) {
         query += ` AND e.file_type = ?`
         params.push(fileType)
       }
-
-      query += ` ORDER BY vec.distance ASC LIMIT ?`
-      params.push(limit)
 
       const rows = this.db!.prepare(query).all(...params) as any[]
 
@@ -387,24 +434,22 @@ export class VectorCache {
     console.log(`🗑️ Clearing all embeddings for file type: ${fileType}...`)
 
     const transaction = this.db.transaction(() => {
-      // 삭제할 임베딩의 ID 목록 가져오기
-      const idsToDelete = this.db!.prepare(
-        'SELECT id FROM ai_embeddings WHERE file_type = ?'
-      )
-        .all(fileType)
-        .map((row: any) => row.id)
+      // 삭제할 임베딩의 ID와 rowid 목록 가져오기
+      const rowsToDelete = this.db!.prepare(
+        'SELECT id, rowid FROM ai_embeddings WHERE file_type = ?'
+      ).all(fileType) as { id: string; rowid: bigint }[]
 
-      if (idsToDelete.length === 0) {
+      if (rowsToDelete.length === 0) {
         console.log(`👍 No embeddings to clear for type: ${fileType}`)
         return
       }
 
+      const idsToDelete = rowsToDelete.map((row) => row.id)
+      const rowIdsToDelete = rowsToDelete.map((row) => row.rowid)
+
       // sqlite-vec 테이블에서 삭제 (사용 가능한 경우)
       if (this.vecLoaded) {
         try {
-          const rowIdsToDelete = idsToDelete.map((id: string) =>
-            this.hashStringToNumber(id)
-          )
           const placeholders = rowIdsToDelete.map(() => '?').join(',')
           const deleteVecQuery = `DELETE FROM vec_embeddings WHERE rowid IN (${placeholders})`
           this.db!.prepare(deleteVecQuery).run(...rowIdsToDelete)
@@ -450,12 +495,18 @@ export class VectorCache {
       GROUP BY model_name
     `
 
-    const totalResult = this.db.prepare(totalQuery).get() as any
-    const typeResults = this.db.prepare(typeQuery).all() as any[]
-    const modelResults = this.db.prepare(modelQuery).all() as any[]
+    const totalResult = this.db.prepare(totalQuery).get() as { total: bigint }
+    const typeResults = this.db.prepare(typeQuery).all() as {
+      file_type: string
+      count: bigint
+    }[]
+    const modelResults = this.db.prepare(modelQuery).all() as {
+      model_name: string
+      count: bigint
+    }[]
 
     const stats = {
-      totalEmbeddings: totalResult.total,
+      totalEmbeddings: Number(totalResult.total),
       imageEmbeddings: 0,
       videoEmbeddings: 0,
       textEmbeddings: 0,
@@ -463,13 +514,13 @@ export class VectorCache {
     }
 
     typeResults.forEach((row) => {
-      if (row.file_type === 'image') stats.imageEmbeddings = row.count
-      if (row.file_type === 'video') stats.videoEmbeddings = row.count
-      if (row.file_type === 'text') stats.textEmbeddings = row.count
+      if (row.file_type === 'image') stats.imageEmbeddings = Number(row.count)
+      if (row.file_type === 'video') stats.videoEmbeddings = Number(row.count)
+      if (row.file_type === 'text') stats.textEmbeddings = Number(row.count)
     })
 
     modelResults.forEach((row) => {
-      stats.models[row.model_name] = row.count
+      stats.models[row.model_name] = Number(row.count)
     })
 
     return stats
