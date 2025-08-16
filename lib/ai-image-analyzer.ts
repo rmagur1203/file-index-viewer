@@ -3,9 +3,16 @@ import { promises as fs } from 'fs'
 import sharp from 'sharp'
 import { createHash } from 'crypto'
 import { getVectorCache, AIEmbedding } from './vector-cache'
+import IMAGENET_CLASSES from './imagenet-classes.json'
+
+export interface ImageClassificationResult {
+  className: string
+  probability: number
+}
 
 export interface ImageAnalysisResult {
   embedding: number[]
+  classification?: ImageClassificationResult[]
   modelName: string
   confidence: number
   processingTime: number
@@ -241,6 +248,52 @@ export class AIImageAnalyzer {
       console.error('Failed to extract features from tensor:', error)
       throw error
     }
+  }
+
+  /**
+   * 이미지를 분류하고 상위 N개의 예측 결과를 반환
+   */
+  async classifyImage(
+    imagePath: string,
+    topK = 5
+  ): Promise<ImageClassificationResult[]> {
+    if (!this.model) {
+      throw new Error('Model not initialized. Call initialize() first.')
+    }
+
+    try {
+      const processedImage = await this.preprocessImage(imagePath)
+
+      const prediction = this.model.predict(processedImage) as tf.Tensor
+      const probabilities = (await prediction.data()) as Float32Array
+      const topKIndices = this.getTopKIndices(probabilities, topK)
+
+      const results = topKIndices.map((i) => ({
+        className:
+          IMAGENET_CLASSES[i as unknown as keyof typeof IMAGENET_CLASSES],
+        probability: probabilities[i],
+      }))
+
+      processedImage.dispose()
+      prediction.dispose()
+
+      return results
+    } catch (error) {
+      console.error(`❌ Failed to classify image ${imagePath}:`, error)
+      throw error
+    }
+  }
+
+  /**
+   * 확률 배열에서 상위 K개의 인덱스를 찾음
+   */
+  private getTopKIndices(values: Float32Array, topK: number): number[] {
+    const valuesAndIndices = []
+    for (let i = 0; i < values.length; i++) {
+      valuesAndIndices.push({ value: values[i], index: i })
+    }
+    valuesAndIndices.sort((a, b) => b.value - a.value)
+    return valuesAndIndices.slice(0, topK).map((x) => x.index)
   }
 
   /**

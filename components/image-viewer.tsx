@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
+import { Badge } from './ui/badge'
 
 interface ImageViewerProps {
   src: string
@@ -20,6 +21,11 @@ interface ImageViewerProps {
   onClose?: () => void
   onImageSelect?: (imagePath: string) => void // 유사 이미지 선택 시 콜백
   onFindSimilar?: (filePath: string) => void
+}
+
+interface ClassificationResult {
+  className: string
+  probability: number
 }
 
 export default function ImageViewer({
@@ -37,6 +43,36 @@ export default function ImageViewer({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
+  const [classification, setClassification] = useState<ClassificationResult[]>(
+    []
+  )
+  const [isLoadingTags, setIsLoadingTags] = useState(false)
+
+  useEffect(() => {
+    const classifyImage = async () => {
+      if (!filePath) return
+      setIsLoadingTags(true)
+      try {
+        const response = await fetch('/api/ai-recommendations/classify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imagePath: filePath }),
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setClassification(data)
+        } else {
+          console.error('Failed to classify image')
+        }
+      } catch (error) {
+        console.error('Error classifying image:', error)
+      } finally {
+        setIsLoadingTags(false)
+      }
+    }
+
+    classifyImage()
+  }, [filePath])
 
   const handleZoomIn = useCallback(() => {
     setScale((prev) => Math.min(prev * 1.25, 5))
@@ -313,7 +349,7 @@ export default function ImageViewer({
       </div>
 
       {/* Info Panel */}
-      <div className="absolute bottom-4 left-4 bg-black/50 rounded-lg p-3 text-white text-sm">
+      <div className="absolute bottom-4 left-4 bg-black/50 rounded-lg p-3 text-white text-sm max-w-sm">
         <div className="space-y-1">
           <div>배율: {Math.round(scale * 100)}%</div>
           <div>회전: {rotation}°</div>
@@ -330,6 +366,27 @@ export default function ImageViewer({
             ESC (닫기)
           </div>
         </div>
+        {filePath && (
+          <div className="mt-2 pt-2 border-t border-gray-500">
+            <h4 className="text-xs font-bold mb-1">인식된 정보:</h4>
+            {isLoadingTags ? (
+              <div className="text-xs text-gray-300">분석 중...</div>
+            ) : (
+              <div className="flex flex-wrap gap-1">
+                {classification.map(({ className, probability }) => (
+                  <Badge
+                    key={className}
+                    variant="secondary"
+                    className="text-xs"
+                    title={`정확도: ${Math.round(probability * 100)}%`}
+                  >
+                    {className.split(',')[0]}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
