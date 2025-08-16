@@ -112,7 +112,7 @@ class ConcurrencyManager {
 export class AIVideoAnalyzer {
   private isInitialized = false
   private modelName = 'video_mobilenet_v2'
-  private maxKeyframes = 10 // 최대 키프레임 수
+  private maxKeyframes = 1000 // 최대 키프레임 수
   private concurrencyManager = ConcurrencyManager.getInstance()
   private imageAnalyzer: AIImageAnalyzer | null = null
 
@@ -559,7 +559,7 @@ export class AIVideoAnalyzer {
       total: number,
       currentFile: string
     ) => void,
-    maxConcurrency: number = 2 // 기본적으로 2개 비디오를 동시에 처리
+    maxConcurrency: number = 4 // 기본적으로 4개 비디오를 동시에 처리
   ): Promise<AIEmbedding[]> {
     const results: AIEmbedding[] = []
     const total = videoPaths.length

@@ -69,7 +69,7 @@ function checkFfmpegAvailable(): boolean {
 export async function extractVideoFingerprint(
   videoPath: string,
   frameInterval: number = 5, // 5초마다 프레임 추출
-  maxFrames: number = 10 // 최대 10프레임
+  maxFrames: number = 1000 // 최대 1000프레임
 ): Promise<VideoFingerprint> {
   console.log(
     `🎬 Starting video fingerprint extraction for: ${path.basename(videoPath)}`
