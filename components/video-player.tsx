@@ -14,17 +14,25 @@ import {
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { useSettings } from '@/contexts/SettingsContext'
+import { Badge } from './ui/badge'
 
 interface VideoPlayerProps {
   src: string
+  filePath?: string // 원본 파일 경로 (AI 분석용)
   onClose: () => void
   onPrevVideo?: () => void
   onNextVideo?: () => void
   onFindSimilar?: () => void
 }
 
+interface ClassificationResult {
+  className: string
+  probability: number
+}
+
 export default function VideoPlayer({
   src,
+  filePath,
   onClose,
   onPrevVideo,
   onNextVideo,
@@ -38,6 +46,36 @@ export default function VideoPlayer({
   const [volume, setVolume] = useState(settings.videoVolume)
   const [isMuted, setIsMuted] = useState(false)
   const [showControls, setShowControls] = useState(settings.showVideoControls)
+  const [classification, setClassification] = useState<ClassificationResult[]>(
+    []
+  )
+  const [isLoadingTags, setIsLoadingTags] = useState(false)
+
+  useEffect(() => {
+    const classifyVideo = async () => {
+      if (!filePath) return
+      setIsLoadingTags(true)
+      try {
+        const response = await fetch('/api/ai-recommendations/classify-video', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ videoPath: filePath }),
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setClassification(data)
+        } else {
+          console.error('Failed to classify video')
+        }
+      } catch (error) {
+        console.error('Error classifying video:', error)
+      } finally {
+        setIsLoadingTags(false)
+      }
+    }
+
+    classifyVideo()
+  }, [filePath])
 
   useEffect(() => {
     const video = videoRef.current
@@ -353,6 +391,30 @@ export default function VideoPlayer({
               </div>
             </div>
           </div>
+
+          {/* Classification Info */}
+          {filePath && (
+            <div className="absolute top-4 left-4 bg-black/60 rounded-lg p-3 text-white text-xs max-w-xs">
+              <div className="space-y-1">
+                <div className="font-semibold mb-2">인식된 정보</div>
+                {isLoadingTags ? (
+                  <div>분석 중...</div>
+                ) : (
+                  <div className="flex flex-wrap gap-1">
+                    {classification.map(({ className, probability }) => (
+                      <Badge
+                        key={className}
+                        variant="secondary"
+                        title={`정확도: ${Math.round(probability * 100)}%`}
+                      >
+                        {className.split(',')[0]}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

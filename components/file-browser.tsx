@@ -209,6 +209,7 @@ export default function FileBrowser({
               </DialogHeader>
               <VideoPlayer
                 src={`/api/media${selectedMedia.path}`}
+                filePath={selectedMedia.filePath}
                 onClose={() => setSelectedMedia(null)}
                 onPrevVideo={handlePrevVideo}
                 onNextVideo={handleNextVideo}

@@ -8,7 +8,7 @@ import ffmpeg from 'fluent-ffmpeg'
 import sharp from 'sharp'
 import { Worker } from 'worker_threads'
 import os from 'os'
-import { AIImageAnalyzer } from './ai-image-analyzer'
+import { AIImageAnalyzer, ImageClassificationResult } from './ai-image-analyzer'
 
 export interface VideoAnalysisResult {
   embedding: number[]
@@ -155,6 +155,92 @@ export class AIVideoAnalyzer {
   }
 
   /**
+   * 여러 프레임의 분류 결과를 하나로 집계
+   */
+  private aggregateClassificationResults(
+    results: ImageClassificationResult[][],
+    topK: number
+  ): ImageClassificationResult[] {
+    const aggregated: {
+      [className: string]: { score: number; count: number }
+    } = {}
+    const classFullName: { [key: string]: string } = {}
+
+    for (const frameResult of results) {
+      for (const res of frameResult) {
+        const primaryName = res.className.split(',')[0]
+        if (!aggregated[primaryName]) {
+          aggregated[primaryName] = { score: 0, count: 0 }
+          classFullName[primaryName] = res.className
+        }
+        aggregated[primaryName].score += res.probability
+        aggregated[primaryName].count += 1
+      }
+    }
+
+    const sorted = Object.entries(aggregated)
+      .map(([primaryName, data]) => ({
+        className: classFullName[primaryName],
+        // 점수 정규화를 위해 평균 점수와 등장 빈도를 함께 고려
+        probability: data.score * Math.log1p(data.count),
+      }))
+      .sort((a, b) => b.probability - a.probability)
+
+    return sorted.slice(0, topK)
+  }
+
+  /**
+   * 비디오에서 대표 프레임을 추출하여 분류
+   */
+  async classifyVideo(
+    videoPath: string,
+    topK = 5
+  ): Promise<ImageClassificationResult[]> {
+    if (!this.imageAnalyzer) {
+      throw new Error('Image analyzer is not initialized.')
+    }
+
+    const tempDir = path.join(
+      process.cwd(),
+      'temp',
+      'video-frames',
+      `${path.basename(videoPath, path.extname(videoPath))}-${Date.now()}`
+    )
+
+    try {
+      // 분류를 위해 20개의 키프레임 추출
+      const framePaths = await this.extractKeyframes(videoPath, tempDir, 20)
+
+      if (framePaths.length === 0) {
+        console.warn(
+          `No keyframes extracted for ${videoPath}. Cannot classify.`
+        )
+        return []
+      }
+
+      // 각 프레임을 병렬로 분류
+      const classificationPromises = framePaths.map((framePath) =>
+        this.imageAnalyzer!.classifyImage(framePath, 5)
+      )
+
+      const allClassifications = await Promise.all(classificationPromises)
+
+      // 결과 집계
+      const aggregatedResults = this.aggregateClassificationResults(
+        allClassifications,
+        topK
+      )
+
+      return aggregatedResults
+    } finally {
+      // 임시 파일 정리
+      await fs.rm(tempDir, { recursive: true, force: true }).catch((err) => {
+        console.warn(`Failed to remove temp directory ${tempDir}:`, err)
+      })
+    }
+  }
+
+  /**
    * 비디오에서 키프레임 추출
    */
   private async extractKeyframes(
@@ -162,32 +248,25 @@ export class AIVideoAnalyzer {
     outputDir: string,
     frameCount: number = this.maxKeyframes
   ): Promise<string[]> {
+    await fs.mkdir(outputDir, { recursive: true })
     return new Promise((resolve, reject) => {
-      const framePaths: string[] = []
-
-      // 출력 디렉토리 생성
-      fs.mkdir(outputDir, { recursive: true }).catch(() => {})
-
-      console.log(
-        `🎯 Extracting ${frameCount} keyframes from: ${path.basename(videoPath)}`
-      )
-
       ffmpeg(videoPath)
-        .on('start', () => {
-          console.log('🎬 Starting keyframe extraction...')
-        })
-        .on('progress', (progress) => {
-          if (progress.percent) {
+        .on('end', async () => {
+          try {
+            const files = await fs.readdir(outputDir)
+            const framePaths = files
+              .filter(
+                (file) => file.startsWith('frame-') && file.endsWith('.jpg')
+              )
+              .map((file) => path.join(outputDir, file))
+              .sort()
             console.log(
-              `📊 Extraction progress: ${Math.round(progress.percent)}%`
+              `✅ Keyframe extraction completed: ${framePaths.length} frames created.`
             )
+            resolve(framePaths)
+          } catch (err) {
+            reject(err)
           }
-        })
-        .on('end', () => {
-          console.log(
-            `✅ Keyframe extraction completed: ${framePaths.length} frames`
-          )
-          resolve(framePaths)
         })
         .on('error', (error) => {
           console.error('❌ FFmpeg keyframe extraction error:', error)
@@ -205,13 +284,6 @@ export class AIVideoAnalyzer {
           '2', // 높은 품질
         ])
         .run()
-
-      // 예상 프레임 경로 생성
-      for (let i = 1; i <= frameCount; i++) {
-        framePaths.push(
-          path.join(outputDir, `frame-${i.toString().padStart(3, '0')}.jpg`)
-        )
-      }
     })
   }
 
