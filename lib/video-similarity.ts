@@ -101,7 +101,7 @@ export async function extractVideoFingerprint(
     const timestamps: number[] = []
     for (
       let i = 0;
-      i < Math.min(Math.floor(duration / frameInterval), maxFrames);
+      i <= Math.min(Math.floor(duration / frameInterval), maxFrames - 1);
       i++
     ) {
       timestamps.push(i * frameInterval)

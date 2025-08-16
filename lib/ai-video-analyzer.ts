@@ -208,8 +208,12 @@ export class AIVideoAnalyzer {
     )
 
     try {
-      // 분류를 위해 20개의 키프레임 추출
-      const framePaths = await this.extractKeyframes(videoPath, tempDir, 20)
+      // 분류를 위해 최대 키프레임 추출
+      const framePaths = await this.extractKeyframes(
+        videoPath,
+        tempDir,
+        this.maxKeyframes
+      )
 
       if (framePaths.length === 0) {
         console.warn(
