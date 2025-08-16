@@ -2,8 +2,9 @@ module.exports = {
   apps: [
     {
       name: 'file-index-viewer',
-      script: 'bun',
-      args: '--bun run next start',
+      script: 'pnpm',
+      interpreter: 'node',
+      args: 'run start',
       cwd: '/Users/user/Projects/file-index-viewer',
       instances: 1,
       exec_mode: 'fork',
@@ -43,7 +44,7 @@ module.exports = {
       listen_timeout: 8000,
 
       // Build hook (runs before starting)
-      pre_deploy_local: 'bun --bun run build',
+      pre_deploy_local: 'pnpm run build',
     },
   ],
 
@@ -56,7 +57,7 @@ module.exports = {
       repo: 'git@github.com:username/file-index-viewer.git',
       path: '/Users/user/Projects/file-index-viewer',
       'post-deploy':
-        'bun install && bun run build && pm2 reload ecosystem.config.js --env production',
+        'pnpm install && pnpm run build && pm2 reload ecosystem.config.js --env production',
     },
   },
 }
