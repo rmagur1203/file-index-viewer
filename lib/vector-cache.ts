@@ -151,8 +151,7 @@ export class VectorCache {
     for (const embedding of allEmbeddings) {
       try {
         const parsedEmbedding = JSON.parse(embedding.embedding_json)
-        const expectedDim =
-          embedding.file_type === 'text' ? 384 : 1000
+        const expectedDim = embedding.file_type === 'text' ? 384 : 1000
         if (parsedEmbedding.length !== expectedDim) {
           idsToDelete.push(embedding.id)
         }
