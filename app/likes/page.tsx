@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import FileBrowser from '@/components/file-browser'
 import { useFileBrowser } from '@/hooks/useFileBrowser'
+import { useBrowser } from '@/contexts/BrowserContext'
 import { FileItem } from '@/types'
 import { toast } from 'sonner'
 import { Frown } from 'lucide-react'
@@ -10,11 +11,8 @@ import { Frown } from 'lucide-react'
 export default function LikesPage() {
   const [initialFiles, setInitialFiles] = useState<FileItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
-
-  const { files, loading, navigateTo, viewMode, searchTerm } = useFileBrowser(
-    undefined,
-    initialFiles
-  )
+  const { viewMode, searchTerm } = useBrowser()
+  const { files, loading, navigateTo } = useFileBrowser(undefined, initialFiles)
 
   useEffect(() => {
     const fetchLikedFiles = async () => {

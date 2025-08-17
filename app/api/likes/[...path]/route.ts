@@ -3,10 +3,11 @@ import { getLikeCache } from '@/lib/like-cache'
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params: _params }: { params: Promise<{ path: string[] }> }
 ) {
+  const params = await _params
   try {
-    const filePath = params.path.join('/')
+    const filePath = '/' + params.path.join('/')
     if (!filePath) {
       return NextResponse.json(
         { error: 'File path is required' },
