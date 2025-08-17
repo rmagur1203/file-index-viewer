@@ -6,6 +6,56 @@ import { getMediaType } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
+async function getFileInfo(filePath: string) {
+  const fullPath = safePath(VIDEO_ROOT, filePath)
+  const name = path.basename(fullPath)
+  try {
+    const itemStats = await sudoStat(fullPath)
+    return {
+      name,
+      type: 'file',
+      size: itemStats.size,
+      modifiedAt: itemStats.mtime.toISOString(),
+      path: filePath,
+      mediaType: getMediaType(name) || 'text',
+    }
+  } catch (error) {
+    console.error(`Error getting stats for ${fullPath}:`, error)
+    return {
+      name,
+      type: 'file',
+      size: undefined,
+      modifiedAt: new Date().toISOString(),
+      path: filePath,
+      mediaType: 'text',
+      accessDenied: true,
+    }
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const { paths } = await request.json()
+    if (!Array.isArray(paths)) {
+      return NextResponse.json(
+        { error: 'Paths must be an array' },
+        { status: 400 }
+      )
+    }
+
+    const files = await Promise.all(paths.map((p) => getFileInfo(p as string)))
+    const validFiles = files.filter(Boolean)
+
+    return NextResponse.json({ files: validFiles })
+  } catch (error) {
+    console.error('Error getting file details:', error)
+    return NextResponse.json(
+      { error: 'Failed to get file details' },
+      { status: 500 }
+    )
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)

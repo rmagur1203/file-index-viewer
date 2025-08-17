@@ -113,6 +113,7 @@ export class AIVideoAnalyzer {
   private isInitialized = false
   private modelName = 'video_mobilenet_v2'
   private maxKeyframes = 1000 // 최대 키프레임 수
+  private frameInterval = 5 // 5초 간격으로 프레임 추출
   private concurrencyManager = ConcurrencyManager.getInstance()
   private imageAnalyzer: AIImageAnalyzer | null = null
 
@@ -209,11 +210,10 @@ export class AIVideoAnalyzer {
 
     try {
       // 분류를 위해 최대 키프레임 추출
-      const framePaths = await this.extractKeyframes(
-        videoPath,
-        tempDir,
-        this.maxKeyframes
-      )
+      const framePaths = await this.extractKeyframes(videoPath, tempDir, {
+        frameCount: this.maxKeyframes,
+        frameInterval: this.frameInterval,
+      })
 
       if (framePaths.length === 0) {
         console.warn(
@@ -250,10 +250,20 @@ export class AIVideoAnalyzer {
   private async extractKeyframes(
     videoPath: string,
     outputDir: string,
-    frameCount: number = this.maxKeyframes
+    options: {
+      frameCount?: number
+      frameInterval?: number
+    } = {}
   ): Promise<string[]> {
+    const { frameCount = this.maxKeyframes, frameInterval } = options
     await fs.mkdir(outputDir, { recursive: true })
     return new Promise((resolve, reject) => {
+      // 프레임 추출 방식 결정
+      const selectFilter =
+        frameInterval && frameInterval > 0
+          ? `fps=1/${frameInterval}` // 시간 간격으로 프레임 추출
+          : `select=eq(pict_type\\,I)` // I-프레임(키프레임)만 선택
+
       ffmpeg(videoPath)
         .on('end', async () => {
           try {
@@ -265,7 +275,7 @@ export class AIVideoAnalyzer {
               .map((file) => path.join(outputDir, file))
               .sort()
             console.log(
-              `✅ Keyframe extraction completed: ${framePaths.length} frames created.`
+              `✅ ${frameInterval ? 'Time-based' : 'Keyframe'} extraction completed: ${framePaths.length} frames created.`
             )
             resolve(framePaths)
           } catch (err) {
@@ -273,13 +283,13 @@ export class AIVideoAnalyzer {
           }
         })
         .on('error', (error) => {
-          console.error('❌ FFmpeg keyframe extraction error:', error)
+          console.error('❌ FFmpeg frame extraction error:', error)
           reject(error)
         })
         .output(path.join(outputDir, 'frame-%03d.jpg'))
         .outputOptions([
           '-vf',
-          `select=eq(pict_type\\,I),scale=224:224`, // I-프레임만 선택하고 224x224로 리사이즈
+          `${selectFilter},scale=224:224`, // 필터와 스케일링 결합
           '-vsync',
           'vfr',
           '-frames:v',
@@ -476,11 +486,10 @@ export class AIVideoAnalyzer {
       )
 
       // 키프레임 추출
-      const framePaths = await this.extractKeyframes(
-        videoPath,
-        tempDir,
-        this.maxKeyframes
-      )
+      const framePaths = await this.extractKeyframes(videoPath, tempDir, {
+        frameCount: this.maxKeyframes,
+        frameInterval: this.frameInterval,
+      })
 
       // 각 키프레임 분석
       const frameResults = await this.analyzeKeyframes(framePaths)

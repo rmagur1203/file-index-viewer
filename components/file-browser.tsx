@@ -160,8 +160,13 @@ export default function FileBrowser({
     }
   }
 
-  const filteredFiles = files.filter((file) =>
-    file.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredFiles = files.filter(
+    (file) =>
+      file &&
+      file.name &&
+      file.name
+        .toLowerCase()
+        .includes(searchTerm ? searchTerm.toLowerCase() : '')
   )
 
   if (loading) {

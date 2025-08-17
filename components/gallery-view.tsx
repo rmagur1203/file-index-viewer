@@ -1,10 +1,20 @@
 'use client'
 
-import { Folder, Play, ImageIcon, FileText, File, Brain } from 'lucide-react'
+import {
+  Folder,
+  Play,
+  ImageIcon,
+  FileText,
+  File,
+  Brain,
+  Heart,
+} from 'lucide-react'
 import Image from 'next/image'
 import type { FileItem } from '@/types'
 import { useSettings } from '@/contexts/SettingsContext'
 import { Button } from '@/components/ui/button'
+import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 
 interface GalleryViewProps {
   files: FileItem[]
@@ -21,6 +31,61 @@ export default function GalleryView({
   onFindSimilar,
 }: GalleryViewProps) {
   const { settings } = useSettings()
+  const [likedFiles, setLikedFiles] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    const fetchLikedFiles = async () => {
+      try {
+        const response = await fetch('/api/likes')
+        if (response.ok) {
+          const likedPaths = await response.json()
+          setLikedFiles(new Set(likedPaths))
+        }
+      } catch (error) {
+        console.error('Failed to fetch liked files:', error)
+      }
+    }
+    fetchLikedFiles()
+  }, [])
+
+  const handleLikeClick = async (
+    e: React.MouseEvent<HTMLButtonElement>,
+    file: FileItem
+  ) => {
+    e.stopPropagation()
+    const isLiked = likedFiles.has(file.path)
+    const newLikedFiles = new Set(likedFiles)
+
+    try {
+      if (isLiked) {
+        const response = await fetch(`/api/likes/${file.path}`, {
+          method: 'DELETE',
+        })
+        if (response.ok) {
+          newLikedFiles.delete(file.path)
+          toast.success(`${file.name}을(를) 좋아요에서 제거했습니다.`)
+        } else {
+          throw new Error('Failed to unlike the file.')
+        }
+      } else {
+        const response = await fetch('/api/likes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: file.path }),
+        })
+        if (response.ok) {
+          newLikedFiles.add(file.path)
+          toast.success(`${file.name}을(를) 좋아요에 추가했습니다.`)
+        } else {
+          throw new Error('Failed to like the file.')
+        }
+      }
+      setLikedFiles(newLikedFiles)
+    } catch (error) {
+      console.error(error)
+      toast.error('작업을 완료하지 못했습니다.')
+    }
+  }
 
   // 썸네일 크기에 따른 그리드 컬럼 수 설정
   const getGridColumns = () => {
@@ -122,6 +187,19 @@ export default function GalleryView({
               <Brain className="w-4 h-4" />
             </Button>
           )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-2 right-2 bg-black/50 text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+            title={likedFiles.has(file.path) ? '좋아요 취소' : '좋아요'}
+            onClick={(e) => handleLikeClick(e, file)}
+          >
+            <Heart
+              className={`w-4 h-4 ${
+                likedFiles.has(file.path) ? 'text-red-500 fill-current' : ''
+              }`}
+            />
+          </Button>
           <div className="absolute bottom-2 right-2 bg-background/70 text-foreground text-xs px-2 py-1 rounded">
             {formatFileSize(file.size)}
           </div>
@@ -149,6 +227,19 @@ export default function GalleryView({
               <Brain className="w-4 h-4" />
             </Button>
           )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-2 right-2 bg-black/50 text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+            title={likedFiles.has(file.path) ? '좋아요 취소' : '좋아요'}
+            onClick={(e) => handleLikeClick(e, file)}
+          >
+            <Heart
+              className={`w-4 h-4 ${
+                likedFiles.has(file.path) ? 'text-red-500 fill-current' : ''
+              }`}
+            />
+          </Button>
           <div className="absolute bottom-2 right-2 bg-background/70 text-foreground text-xs px-2 py-1 rounded">
             {formatFileSize(file.size)}
           </div>
@@ -184,6 +275,17 @@ export default function GalleryView({
                 <Brain className="w-4 h-4" />
               </Button>
             )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 bg-black/50 text-white hover:bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+              title={likedFiles.has(file.path) ? '좋아요 취소' : '좋아요'}
+              onClick={(e) => handleLikeClick(e, file)}
+            >
+              <Heart
+                className={`w-4 h-4 ${likedFiles.has(file.path) ? 'text-red-500 fill-current' : ''}`}
+              />
+            </Button>
           </div>
           <div className="p-3">
             <h3

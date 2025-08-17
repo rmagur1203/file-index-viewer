@@ -8,6 +8,7 @@ import {
   Settings,
   Copy,
   Brain,
+  Heart,
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -93,6 +94,11 @@ export function BrowserHeader({
           <Link href="/duplicates" passHref>
             <Button variant="ghost" size="icon" title="중복 파일 관리">
               <Copy className="h-[1.2rem] w-[1.2rem]" />
+            </Button>
+          </Link>
+          <Link href="/likes" passHref>
+            <Button variant="ghost" size="icon" title="좋아요한 파일">
+              <Heart className="h-[1.2rem] w-[1.2rem]" />
             </Button>
           </Link>
           <Link href="/settings" passHref>

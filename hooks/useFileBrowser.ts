@@ -7,15 +7,24 @@ import type { FileItem, FolderTree } from '@/types'
 
 export type { FileItem, FolderTree }
 
-export const useFileBrowser = (initialPath: string = '/') => {
+export const useFileBrowser = (
+  initialPath?: string,
+  initialFiles?: FileItem[]
+) => {
   const [currentPath, setCurrentPath] = useQueryState('path', {
-    defaultValue: initialPath,
+    defaultValue: initialPath || '/',
   })
   const [history, setHistory] = useState([currentPath])
 
-  const [files, setFiles] = useState<FileItem[]>([])
-  const [loading, setLoading] = useState(true)
+  const [files, setFiles] = useState<FileItem[]>(initialFiles || [])
+  const [loading, setLoading] = useState(!initialFiles)
   const [folderTree, setFolderTree] = useState<FolderTree>({})
+
+  useEffect(() => {
+    if (initialFiles) {
+      setFiles(initialFiles)
+    }
+  }, [initialFiles])
 
   const loadFiles = useCallback(async (path: string) => {
     setLoading(true)
