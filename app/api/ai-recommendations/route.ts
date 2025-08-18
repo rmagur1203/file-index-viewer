@@ -38,53 +38,105 @@ export async function GET(request: NextRequest) {
     const actualIsVideo = isVideo(filePath)
     const actualIsText = isText(filePath)
 
-    // 파일 타입이 명시적으로 요청된 경우, 실제 파일 타입과 일치하는지 확인
-    if (fileType) {
-      if (fileType === 'image' && !actualIsImage) {
-        return NextResponse.json(
-          { 
-            error: '파일 타입이 일치하지 않습니다', 
-            message: '이미지 분석을 요청했지만 이 파일은 이미지가 아닙니다.',
-            actualFileType: actualIsVideo ? 'video' : actualIsText ? 'text' : 'unknown'
-          },
-          { status: 400 }
+    // 텍스트 파일에 대한 크로스 미디어 요청은 지원하지 않음
+    if (
+      actualIsText &&
+      fileType &&
+      (fileType === 'image' || fileType === 'video')
+    ) {
+      return NextResponse.json(
+        {
+          error: '지원되지 않는 요청입니다',
+          message:
+            '텍스트 파일에 대해서는 이미지나 비디오 분석을 수행할 수 없습니다.',
+          actualFileType: 'text',
+        },
+        { status: 400 }
+      )
+    }
+
+    // 텍스트가 아닌 파일에 대해 텍스트 분석 요청 시 거부
+    if (!actualIsText && fileType === 'text') {
+      return NextResponse.json(
+        {
+          error: '지원되지 않는 요청입니다',
+          message:
+            '이미지나 비디오 파일에 대해서는 텍스트 분석을 수행할 수 없습니다.',
+          actualFileType: actualIsImage
+            ? 'image'
+            : actualIsVideo
+              ? 'video'
+              : 'unknown',
+        },
+        { status: 400 }
+      )
+    }
+
+    // 파일 타입별 추천 처리 (크로스 미디어 검색 지원)
+    if (fileType === 'image') {
+      if (actualIsImage) {
+        // 이미지 파일에서 이미지 검색 (기본)
+        return await handleImageRecommendations(
+          fullPath,
+          limit,
+          threshold,
+          'image'
+        )
+      } else if (actualIsVideo) {
+        // 비디오 파일에서 이미지 검색 (크로스 미디어)
+        return await handleCrossMediaRecommendations(
+          fullPath,
+          limit,
+          threshold,
+          'video',
+          'image'
         )
       }
-      if (fileType === 'video' && !actualIsVideo) {
-        return NextResponse.json(
-          { 
-            error: '파일 타입이 일치하지 않습니다', 
-            message: '비디오 분석을 요청했지만 이 파일은 비디오가 아닙니다.',
-            actualFileType: actualIsImage ? 'image' : actualIsText ? 'text' : 'unknown'
-          },
-          { status: 400 }
+    } else if (fileType === 'video') {
+      if (actualIsVideo) {
+        // 비디오 파일에서 비디오 검색 (기본)
+        return await handleVideoRecommendations(
+          fullPath,
+          limit,
+          threshold,
+          'video'
+        )
+      } else if (actualIsImage) {
+        // 이미지 파일에서 비디오 검색 (크로스 미디어)
+        return await handleCrossMediaRecommendations(
+          fullPath,
+          limit,
+          threshold,
+          'image',
+          'video'
         )
       }
-      if (fileType === 'text' && !actualIsText) {
-        return NextResponse.json(
-          { 
-            error: '파일 타입이 일치하지 않습니다', 
-            message: '텍스트 분석을 요청했지만 이 파일은 텍스트가 아닙니다.',
-            actualFileType: actualIsImage ? 'image' : actualIsVideo ? 'video' : 'unknown'
-          },
-          { status: 400 }
+    } else if (fileType === 'text' || (!fileType && actualIsText)) {
+      // 텍스트 분석 (크로스 미디어 없음)
+      return await handleTextRecommendations(fullPath, limit, threshold)
+    } else if (!fileType) {
+      // 자동 감지 (기본 동작)
+      if (actualIsImage) {
+        return await handleImageRecommendations(
+          fullPath,
+          limit,
+          threshold,
+          'image'
+        )
+      } else if (actualIsVideo) {
+        return await handleVideoRecommendations(
+          fullPath,
+          limit,
+          threshold,
+          'video'
         )
       }
     }
 
-    // 파일 타입별 추천 처리 (요청된 타입 우선, 없으면 자동 감지)
-    if ((fileType === 'image') || (!fileType && actualIsImage)) {
-      return await handleImageRecommendations(fullPath, limit, threshold)
-    } else if ((fileType === 'video') || (!fileType && actualIsVideo)) {
-      return await handleVideoRecommendations(fullPath, limit, threshold)
-    } else if ((fileType === 'text') || (!fileType && actualIsText)) {
-      return await handleTextRecommendations(fullPath, limit, threshold)
-    } else {
-      return NextResponse.json(
-        { error: 'Unsupported file type' },
-        { status: 400 }
-      )
-    }
+    return NextResponse.json(
+      { error: 'Unsupported file type or request combination' },
+      { status: 400 }
+    )
   } catch (error) {
     console.error('AI recommendations error:', error)
     return NextResponse.json(
@@ -97,26 +149,33 @@ export async function GET(request: NextRequest) {
 async function handleImageRecommendations(
   filePath: string,
   limit: number,
-  threshold: number
+  threshold: number,
+  searchFileType: 'image' | 'video' = 'image'
 ) {
   try {
     const imageAnalyzer = await getImageAnalyzer()
 
-    // 유사한 이미지 검색
-    const similarImages = await imageAnalyzer.findSimilarImages(
-      filePath,
+    // 유사한 파일 검색 (지정된 타입에서)
+    const vectorCache = await getVectorCache()
+    const queryResult = await imageAnalyzer.extractFeatures(filePath)
+    const similarFiles = await vectorCache.findSimilar(
+      queryResult.embedding,
+      searchFileType,
       limit,
       threshold
     )
 
-    const recommendations = similarImages.map((result) => ({
+    const recommendations = similarFiles.map((result) => ({
       file: {
         filePath: result.file.filePath.replace(mediaRoot, ''), // 상대 경로로 변환
         type: result.file.fileType,
         metadata: result.file.metadata,
       },
       similarity: result.similarity,
-      reason: 'AI 시각적 특징 유사성',
+      reason:
+        searchFileType === 'image'
+          ? 'AI 시각적 특징 유사성'
+          : 'AI 크로스 미디어 유사성',
       modelUsed: result.file.modelName,
     }))
 
@@ -129,6 +188,8 @@ async function handleImageRecommendations(
         limit,
         threshold,
         model: imageAnalyzer.getModelInfo().name,
+        searchFileType,
+        crossMedia: searchFileType !== 'image',
       },
     })
   } catch (error) {
@@ -140,21 +201,25 @@ async function handleImageRecommendations(
 async function handleVideoRecommendations(
   filePath: string,
   limit: number,
-  threshold: number
+  threshold: number,
+  searchFileType: 'image' | 'video' = 'video'
 ) {
   try {
     const videoAnalyzer = await getVideoAnalyzer()
 
     console.log(`🎬 Finding similar videos for: ${filePath}`)
 
-    // 유사한 비디오 검색
-    const similarVideos = await videoAnalyzer.findSimilarVideos(
-      filePath,
+    // 유사한 파일 검색 (지정된 타입에서)
+    const vectorCache = await getVectorCache()
+    const queryResult = await videoAnalyzer.extractFeatures(filePath)
+    const similarFiles = await vectorCache.findSimilar(
+      queryResult.embedding,
+      searchFileType,
       limit,
       threshold
     )
 
-    console.log(`✅ Found ${similarVideos.length} similar videos`)
+    console.log(`✅ Found ${similarFiles.length} similar ${searchFileType}s`)
 
     return NextResponse.json({
       success: true,
@@ -164,7 +229,7 @@ async function handleVideoRecommendations(
         limit,
         threshold,
       },
-      recommendations: similarVideos.map((result) => ({
+      recommendations: similarFiles.map((result) => ({
         file: {
           filePath: result.file.filePath.replace(mediaRoot, ''), // 상대 경로로 변환
           name: result.file.filePath.split('/').pop(),
@@ -181,11 +246,13 @@ async function handleVideoRecommendations(
           processingTime: (result.file.metadata as any)?.processingTime || 0,
         },
       })),
-      total: similarVideos.length,
+      total: similarFiles.length,
       processingInfo: {
         analyzer: 'video_mobilenet_v2',
         method: 'keyframe_feature_extraction',
         threshold: threshold,
+        searchFileType,
+        crossMedia: searchFileType !== 'video',
       },
     })
   } catch (error) {
@@ -433,6 +500,45 @@ async function handleVectorSearch(query: any, options: any) {
     }
   } catch (error) {
     console.error('Vector search error:', error)
+    throw error
+  }
+}
+
+async function handleCrossMediaRecommendations(
+  filePath: string,
+  limit: number,
+  threshold: number,
+  sourceType: 'image' | 'video',
+  targetType: 'image' | 'video'
+) {
+  try {
+    console.log(
+      `🔄 Cross-media search: ${sourceType} → ${targetType} for: ${filePath}`
+    )
+
+    if (sourceType === 'image' && targetType === 'video') {
+      // 이미지 파일에서 비디오 검색
+      return await handleImageRecommendations(
+        filePath,
+        limit,
+        threshold,
+        'video'
+      )
+    } else if (sourceType === 'video' && targetType === 'image') {
+      // 비디오 파일에서 이미지 검색
+      return await handleVideoRecommendations(
+        filePath,
+        limit,
+        threshold,
+        'image'
+      )
+    } else {
+      throw new Error(
+        `Unsupported cross-media combination: ${sourceType} → ${targetType}`
+      )
+    }
+  } catch (error) {
+    console.error('Cross-media recommendations error:', error)
     throw error
   }
 }

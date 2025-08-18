@@ -84,33 +84,14 @@ export const SimilarFilesPanel: React.FC<SimilarFilesPanelProps> = ({
       const response = await fetch(
         `/api/ai-recommendations?filePath=${encodeURIComponent(filePath)}&threshold=${threshold}&limit=${limit}&fileType=${selectedFileType}`
       )
-      
+
       if (!response.ok) {
         const errorData = await response.json()
-        
-        // 파일 타입 불일치 에러인 경우 자동으로 올바른 타입으로 전환
-        if (errorData.error === '파일 타입이 일치하지 않습니다' && errorData.actualFileType) {
-          const correctType = errorData.actualFileType as FileType
-          console.log(`파일 타입을 ${selectedFileType}에서 ${correctType}로 자동 전환합니다.`)
-          setSelectedFileType(correctType)
-          
-          // 올바른 타입으로 다시 요청
-          const retryResponse = await fetch(
-            `/api/ai-recommendations?filePath=${encodeURIComponent(filePath)}&threshold=${threshold}&limit=${limit}&fileType=${correctType}`
-          )
-          
-          if (!retryResponse.ok) {
-            throw new Error('유사한 파일을 찾는 데 실패했습니다.')
-          }
-          
-          const retryData = await retryResponse.json()
-          setSimilarFiles(retryData.recommendations || [])
-          return
-        }
-        
-        throw new Error(errorData.message || '유사한 파일을 찾는 데 실패했습니다.')
+        throw new Error(
+          errorData.message || '유사한 파일을 찾는 데 실패했습니다.'
+        )
       }
-      
+
       const data = await response.json()
       setSimilarFiles(data.recommendations || [])
     } catch (err) {
@@ -133,21 +114,29 @@ export const SimilarFilesPanel: React.FC<SimilarFilesPanelProps> = ({
     onOpenChange(false)
   }
 
-  const getTypeConfig = (fileType: FileType) => {
+  const getTypeConfig = (fileType: FileType, currentFileType: FileType) => {
+    const isCrossMedia = fileType !== currentFileType
+
     switch (fileType) {
       case 'image':
         return {
-          title: '유사한 이미지 찾기',
-          description:
-            '현재 이미지와 유사한 시각적 특징을 가진 다른 이미지를 검색합니다.',
+          title: isCrossMedia
+            ? '유사한 이미지 찾기 (크로스 미디어)'
+            : '유사한 이미지 찾기',
+          description: isCrossMedia
+            ? '현재 파일과 시각적으로 유사한 특징을 가진 이미지를 검색합니다.'
+            : '현재 이미지와 유사한 시각적 특징을 가진 다른 이미지를 검색합니다.',
           icon: ImageIcon,
           emptyMessage: '유사한 이미지를 찾을 수 없습니다.',
         }
       case 'video':
         return {
-          title: '유사한 비디오 찾기',
-          description:
-            '현재 비디오와 유사한 시각적 특징을 가진 다른 비디오를 검색합니다.',
+          title: isCrossMedia
+            ? '유사한 비디오 찾기 (크로스 미디어)'
+            : '유사한 비디오 찾기',
+          description: isCrossMedia
+            ? '현재 파일과 시각적으로 유사한 특징을 가진 비디오를 검색합니다.'
+            : '현재 비디오와 유사한 시각적 특징을 가진 다른 비디오를 검색합니다.',
           icon: VideoIcon,
           emptyMessage: '유사한 비디오를 찾을 수 없습니다.',
         }
@@ -165,7 +154,7 @@ export const SimilarFilesPanel: React.FC<SimilarFilesPanelProps> = ({
   const renderFilePreview = (file: SimilarFile) => {
     const { filePath: filePathStr } = file.file
 
-    if (selectedFileType === 'image' && isImage(filePathStr)) {
+    if (isImage(filePathStr)) {
       const fallbackIcon = (
         <div className="w-full h-32 rounded-md bg-muted flex items-center justify-center">
           <svg
@@ -194,7 +183,7 @@ export const SimilarFilesPanel: React.FC<SimilarFilesPanelProps> = ({
       )
     }
 
-    if (selectedFileType === 'video' && isVideo(filePathStr)) {
+    if (isVideo(filePathStr)) {
       const fallbackIcon = (
         <div className="w-full h-32 rounded-md bg-muted flex items-center justify-center">
           <svg
@@ -220,7 +209,8 @@ export const SimilarFilesPanel: React.FC<SimilarFilesPanelProps> = ({
     }
 
     // 텍스트나 기타 파일의 경우
-    const IconComponent = getTypeConfig(selectedFileType).icon
+    const currentType = detectFileType(filePath)
+    const IconComponent = getTypeConfig(selectedFileType, currentType).icon
     return (
       <div className="w-full h-32 rounded-md bg-gray-200 flex items-center justify-center">
         <IconComponent className="w-8 h-8 text-gray-500" />
@@ -228,7 +218,8 @@ export const SimilarFilesPanel: React.FC<SimilarFilesPanelProps> = ({
     )
   }
 
-  const typeConfig = getTypeConfig(selectedFileType)
+  const currentFileType = detectFileType(filePath)
+  const typeConfig = getTypeConfig(selectedFileType, currentFileType)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -251,19 +242,29 @@ export const SimilarFilesPanel: React.FC<SimilarFilesPanelProps> = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="image">
+                <SelectItem value="image" disabled={currentFileType === 'text'}>
                   <div className="flex items-center space-x-2">
                     <ImageIcon className="w-4 h-4" />
                     <span>이미지</span>
+                    {currentFileType === 'video' && (
+                      <span className="text-xs text-muted-foreground">
+                        (크로스)
+                      </span>
+                    )}
                   </div>
                 </SelectItem>
-                <SelectItem value="video">
+                <SelectItem value="video" disabled={currentFileType === 'text'}>
                   <div className="flex items-center space-x-2">
                     <VideoIcon className="w-4 h-4" />
                     <span>비디오</span>
+                    {currentFileType === 'image' && (
+                      <span className="text-xs text-muted-foreground">
+                        (크로스)
+                      </span>
+                    )}
                   </div>
                 </SelectItem>
-                <SelectItem value="text">
+                <SelectItem value="text" disabled={currentFileType !== 'text'}>
                   <div className="flex items-center space-x-2">
                     <FileTextIcon className="w-4 h-4" />
                     <span>텍스트</span>
