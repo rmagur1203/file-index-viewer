@@ -343,10 +343,10 @@ export class VectorCache {
           vec.distance
         FROM ${targetTable} vec
         JOIN ai_embeddings e ON e.rowid = vec.rowid
-        WHERE vec.embedding MATCH ? AND k = ?
+        WHERE vec.embedding MATCH ? AND k = ? AND distance < ?
       `
 
-      const params: any[] = [JSON.stringify(queryEmbedding), limit * 2] // 더 많은 결과를 가져와서 필터링
+      const params: any[] = [JSON.stringify(queryEmbedding), limit, threshold] // 더 많은 결과를 가져와서 필터링
 
       if (fileType) {
         query += ` AND e.file_type = ?`
@@ -355,13 +355,11 @@ export class VectorCache {
 
       const rows = this.db!.prepare(query).all(...params) as any[]
 
-      return rows
-        .map((row) => ({
+      return rows.map((row) => ({
           file: this.rowToEmbedding(row),
           similarity: 1 - row.distance, // distance를 similarity로 변환
           distance: row.distance,
         }))
-        .filter((result) => result.similarity >= threshold)
     } catch (error) {
       console.warn(
         'sqlite-vec search failed, falling back to cosine similarity:',
