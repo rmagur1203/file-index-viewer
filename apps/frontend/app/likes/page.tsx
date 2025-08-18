@@ -18,10 +18,12 @@ export default function LikesPage() {
     const fetchLikedFiles = async () => {
       setIsLoading(true)
       try {
-        const response = await fetch('/api/likes')
+        const API_BASE_URL =
+          process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+        const response = await fetch(`${API_BASE_URL}/api/likes`)
         if (response.ok) {
           const likedPaths: string[] = await response.json()
-          const fileDetailsResponse = await fetch('/api/files', {
+          const fileDetailsResponse = await fetch(`${API_BASE_URL}/api/files`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ paths: likedPaths }),

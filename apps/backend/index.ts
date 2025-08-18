@@ -4,9 +4,9 @@ import { cors } from "hono/cors";
 // API 라우트 임포트
 import files from "./src/routes/files";
 import likes from "./src/routes/likes";
-// import duplicates from './src/routes/duplicates'
+import duplicates from "./src/routes/duplicates";
 import thumbnail from "./src/routes/thumbnail";
-// import aiRecommendations from './src/routes/ai-recommendations'
+import aiRecommendations from "./src/routes/ai-recommendations";
 import cache from "./src/routes/cache";
 import media from "./src/routes/media";
 
@@ -16,7 +16,7 @@ const app = new Hono();
 app.use(
   "*",
   cors({
-    origin: ["http://localhost:3000", "http://localhost:3001"],
+    origin: (c) => c,
     credentials: true,
   })
 );
@@ -37,9 +37,9 @@ api.get("/health", (c) => {
 // API 라우트 연결
 api.route("/files", files);
 api.route("/likes", likes);
-// api.route('/duplicates', duplicates)
+api.route("/duplicates", duplicates);
 api.route("/thumbnail", thumbnail);
-// api.route('/ai-recommendations', aiRecommendations)
+api.route("/ai-recommendations", aiRecommendations);
 api.route("/cache", cache);
 api.route("/media", media);
 

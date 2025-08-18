@@ -1,0 +1,25 @@
+Using system FFmpeg: /usr/local/bin/ffmpeg
+🚀 Backend server starting on port 3001
+📁 Files API: http://localhost:3001/api/files
+👍 Likes API: http://localhost:3001/api/likes
+🔍 Duplicates API: http://localhost:3001/api/duplicates
+🖼️ Thumbnail API: http://localhost:3001/api/thumbnail
+🤖 AI Recommendations API: http://localhost:3001/api/ai-recommendations
+📦 Cache API: http://localhost:3001/api/cache
+🎬 Media API: http://localhost:3001/api/media
+ 7 |       if (typeof entryNamespace?.default?.fetch === 'function')  {
+ 8 |         const server = Bun.serve(entryNamespace.default);
+ 9 |         console.debug(`Started ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+10 |       }
+11 |    }, reportError);
+12 |    const server = Bun.serve(entryNamespace.default);
+               ^
+error: Failed to start server. Is port 3001 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:12:28
+      at loadAndEvaluateModule (1:11)
+
+Bun v1.2.19 (macOS x64)

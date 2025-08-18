@@ -3,7 +3,7 @@ import { getLikeCache } from "../lib/like-cache";
 
 const likes = new Hono();
 
-// GET /api/likes - 모든 좋아요 조회
+// likes API 구현
 likes.get("/", async (c) => {
   try {
     const likeCache = await getLikeCache();
@@ -15,7 +15,6 @@ likes.get("/", async (c) => {
   }
 });
 
-// POST /api/likes - 좋아요 추가
 likes.post("/", async (c) => {
   try {
     const { path } = await c.req.json();
@@ -33,7 +32,6 @@ likes.post("/", async (c) => {
   }
 });
 
-// Dynamic route for individual likes - /api/likes/[...path]
 likes.delete("/*", async (c) => {
   try {
     // URL 경로에서 파일 경로 추출
