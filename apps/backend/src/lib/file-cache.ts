@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import path from "path";
 import { promises as fs } from "fs";
 import { DuplicateFile, VideoFingerprint } from "../types";
+import { DATABASE_DIR } from "./config";
 
 interface CachedFileInfo {
   path: string;
@@ -19,7 +20,7 @@ export class FileCache {
 
   constructor(dbPath?: string) {
     // 기본적으로 temp 디렉토리에 데이터베이스 저장
-    this.dbPath = dbPath || path.join(process.cwd(), "temp", "file-cache.db");
+    this.dbPath = dbPath || path.join(DATABASE_DIR, "file-cache.db");
   }
 
   /**

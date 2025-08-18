@@ -24,6 +24,7 @@ import type {
   SimilarityThresholds,
 } from '@/types'
 import { formatFileSize } from '@/lib/utils'
+import { BACKEND_API_URL } from '@/lib/config'
 import {
   DEFAULT_THRESHOLDS,
   serializeThresholds,
@@ -427,8 +428,8 @@ function DuplicateGroupCard({
                 <LazyImage
                   src={
                     group.type === 'image'
-                      ? `/api/media${encodeURI(representativeFile.relativePath)}`
-                      : `/api/thumbnail?path=${encodeURIComponent(representativeFile.relativePath)}`
+                      ? `${BACKEND_API_URL}/api/media${encodeURI(representativeFile.relativePath)}`
+                      : `${BACKEND_API_URL}/api/thumbnail?path=${encodeURIComponent(representativeFile.relativePath)}`
                   }
                   alt={representativeFile.name}
                   width={64}
@@ -534,8 +535,8 @@ function DuplicateFileCard({
           <LazyImage
             src={
               group.type === 'image'
-                ? `/api/media${encodeURI(file.relativePath)}`
-                : `/api/thumbnail?path=${encodeURIComponent(file.relativePath)}`
+                ? `${BACKEND_API_URL}/api/media${encodeURI(file.relativePath)}`
+                : `${BACKEND_API_URL}/api/thumbnail?path=${encodeURIComponent(file.relativePath)}`
             }
             alt={file.name}
             width={200}

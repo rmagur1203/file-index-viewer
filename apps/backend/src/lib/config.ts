@@ -11,13 +11,13 @@ export const VIDEO_ROOT = MEDIA_ROOT;
 export const THUMBNAIL_DIR =
   process.env.THUMBNAIL_DIR || path.join(process.cwd(), "thumbnails");
 
+// 데이터베이스 디렉토리
+export const DATABASE_DIR =
+  process.env.DATABASE_DIR || path.join(process.cwd(), "database");
+
 // 캐시 디렉토리
 export const CACHE_DIR =
   process.env.CACHE_DIR || path.join(process.cwd(), "cache");
-
-// 데이터베이스 파일 경로
-export const DB_PATH =
-  process.env.DB_PATH || path.join(process.cwd(), "data", "file-index.db");
 
 // OpenAI API 키
 export const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";

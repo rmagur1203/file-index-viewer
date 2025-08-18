@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import LazyImage from '@/components/lazy-image'
+import { BACKEND_API_URL } from '@/lib/config'
 import {
   Select,
   SelectContent,
@@ -173,7 +174,7 @@ export const SimilarFilesPanel: React.FC<SimilarFilesPanelProps> = ({
 
       return (
         <LazyImage
-          src={`/api/media${filePathStr}?thumbnail=true`}
+          src={`${BACKEND_API_URL}/api/media${filePathStr}?thumbnail=true`}
           alt={filePathStr}
           width={200}
           height={128}

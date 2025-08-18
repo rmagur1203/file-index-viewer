@@ -14,6 +14,7 @@ import ListView from './list-view'
 import GalleryView from './gallery-view'
 import { FileItem } from '@/hooks/useFileBrowser'
 import { SimilarFilesPanel } from './similar-files-panel'
+import { BACKEND_API_URL } from '@/lib/config'
 import { Button } from '@/components/ui/button'
 import { Brain } from 'lucide-react'
 
@@ -205,7 +206,7 @@ export default function FileBrowser({
                 </DialogTitle>
               </DialogHeader>
               <VideoPlayer
-                src={`/api/media${selectedMedia.path}`}
+                src={`${BACKEND_API_URL}/api/media${selectedMedia.path}`}
                 filePath={selectedMedia.filePath}
                 onClose={() => setSelectedMedia(null)}
                 onPrevVideo={handlePrevVideo}
@@ -218,7 +219,7 @@ export default function FileBrowser({
           )}
           {selectedMedia?.type === 'image' && (
             <ImageViewer
-              src={`/api/media${selectedMedia.path}`}
+              src={`${BACKEND_API_URL}/api/media${selectedMedia.path}`}
               alt={selectedMedia.name}
               filePath={selectedMedia.filePath}
               onClose={() => setSelectedMedia(null)}
@@ -228,7 +229,7 @@ export default function FileBrowser({
           )}
           {selectedMedia?.type === 'pdf' && renderPdfViewer && (
             <PdfJsViewer
-              src={`/api/media${selectedMedia.path}`}
+              src={`${BACKEND_API_URL}/api/media${selectedMedia.path}`}
               fileName={selectedMedia.name}
               onClose={() => setSelectedMedia(null)}
               onFindSimilar={() => handleFindSimilar(selectedMedia.path, 'pdf')}
@@ -255,7 +256,9 @@ export default function FileBrowser({
                 </div>
               </DialogHeader>
               <div className="flex-1 overflow-y-auto">
-                <TextViewer src={`/api/media${selectedMedia.path}`} />
+                <TextViewer
+                  src={`${BACKEND_API_URL}/api/media${selectedMedia.path}`}
+                />
               </div>
             </>
           )}

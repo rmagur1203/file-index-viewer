@@ -1,13 +1,14 @@
 import { Database } from "bun:sqlite";
 import path from "path";
 import { promises as fs } from "fs";
+import { DATABASE_DIR } from "./config";
 
 export class LikeCache {
   private db: Database | null = null;
   private dbPath: string;
 
   constructor(dbPath?: string) {
-    this.dbPath = dbPath || path.join(process.cwd(), "temp", "likes.db");
+    this.dbPath = dbPath || path.join(DATABASE_DIR, "likes.db");
   }
 
   async initialize(): Promise<void> {

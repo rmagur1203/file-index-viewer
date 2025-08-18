@@ -12,6 +12,7 @@ import {
 import LazyImage from '@/components/lazy-image'
 import type { FileItem } from '@/types'
 import { useSettings } from '@/contexts/SettingsContext'
+import { BACKEND_API_URL } from '@/lib/config'
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { Button } from './ui/button'
@@ -155,8 +156,8 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
     if (file.mediaType === 'video' || file.mediaType === 'image') {
       const isVideo = file.mediaType === 'video'
       const thumbnailUrl = isVideo
-        ? `/api/thumbnail?path=${encodeURIComponent(file.path)}`
-        : `/api/media${file.path}`
+        ? `${BACKEND_API_URL}/api/thumbnail?path=${encodeURIComponent(file.path)}`
+        : `${BACKEND_API_URL}/api/media${file.path}`
 
       const fallbackIcon = isVideo ? (
         <div className="w-full h-full flex items-center justify-center">

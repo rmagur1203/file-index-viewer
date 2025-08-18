@@ -50,7 +50,7 @@ media.get("/*", async (c) => {
     if (range && contentType.startsWith("video/")) {
       // Range 요청 처리 (비디오 스트리밍)
       const parts = range.replace(/bytes=/, "").split("-");
-      const start = parseInt(parts[0], 10);
+      const start = parseInt(parts[0]!, 10);
       const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
       const chunkSize = end - start + 1;
 

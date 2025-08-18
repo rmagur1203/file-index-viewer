@@ -1,5 +1,9 @@
 import path from 'path'
 
+// 백엔드 API 서버 URL
+export const BACKEND_API_URL =
+  process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:3001'
+
 // 미디어 라이브러리의 루트 디렉토리
 export const MEDIA_ROOT = process.env.VIDEO_ROOT || process.cwd()
 

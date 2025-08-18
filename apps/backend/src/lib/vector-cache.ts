@@ -1,6 +1,7 @@
 import { Database } from "bun:sqlite";
 import path from "path";
 import { promises as fs } from "fs";
+import { DATABASE_DIR } from "./config";
 // Note: sqlite-vec may need to be handled differently with bun:sqlite
 // import * as sqliteVec from 'sqlite-vec'
 
@@ -32,7 +33,7 @@ export class VectorCache {
   private vecLoaded = false;
 
   constructor(dbPath?: string) {
-    this.dbPath = dbPath || path.join(process.cwd(), "temp", "vector-cache.db");
+    this.dbPath = dbPath || path.join(DATABASE_DIR, "vector-cache.db");
   }
 
   isInitialized(): boolean {

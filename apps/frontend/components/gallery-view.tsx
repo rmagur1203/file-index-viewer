@@ -12,6 +12,7 @@ import {
 import LazyImage from '@/components/lazy-image'
 import type { FileItem } from '@/types'
 import { useSettings } from '@/contexts/SettingsContext'
+import { BACKEND_API_URL } from '@/lib/config'
 import { Button } from '@/components/ui/button'
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
@@ -146,8 +147,8 @@ export default function GalleryView({
     if (file.mediaType === 'image' || file.mediaType === 'video') {
       const isVideo = file.mediaType === 'video'
       const thumbnailUrl = isVideo
-        ? `/api/thumbnail?path=${encodeURIComponent(file.path)}`
-        : `/api/media${file.path}`
+        ? `${BACKEND_API_URL}/api/thumbnail?path=${encodeURIComponent(file.path)}`
+        : `${BACKEND_API_URL}/api/media${file.path}`
 
       const fallbackIcon = isVideo ? (
         <div className="w-full h-full flex items-center justify-center bg-muted">
