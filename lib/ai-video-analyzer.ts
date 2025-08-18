@@ -609,13 +609,27 @@ export class AIVideoAnalyzer {
     threshold: number = 0.7
   ): Promise<{ file: AIEmbedding; similarity: number }[]> {
     try {
-      // 쿼리 비디오 분석
-      const queryResult = await this.extractFeatures(queryVideoPath)
+      // 벡터 캐시에서 먼저 기존 임베딩 확인
+      const vectorCache = await getVectorCache()
+      let queryEmbedding: number[]
+
+      const existingEmbedding = await vectorCache.getEmbeddingByPath(
+        queryVideoPath,
+        this.modelName
+      )
+
+      if (existingEmbedding) {
+        console.log(`📋 Using cached embedding for query: ${queryVideoPath}`)
+        queryEmbedding = existingEmbedding.embedding
+      } else {
+        console.log(`🔍 Analyzing query video: ${queryVideoPath}`)
+        const queryResult = await this.extractFeatures(queryVideoPath)
+        queryEmbedding = queryResult.embedding
+      }
 
       // 벡터 캐시에서 유사한 비디오 검색
-      const vectorCache = await getVectorCache()
       const results = await vectorCache.findSimilar(
-        queryResult.embedding,
+        queryEmbedding,
         'video',
         limit,
         threshold

@@ -155,11 +155,27 @@ async function handleImageRecommendations(
   try {
     const imageAnalyzer = await getImageAnalyzer()
 
-    // 유사한 파일 검색 (지정된 타입에서)
+    // 벡터 캐시에서 먼저 기존 임베딩 확인
     const vectorCache = await getVectorCache()
-    const queryResult = await imageAnalyzer.extractFeatures(filePath)
+    let queryEmbedding: number[]
+
+    const existingEmbedding = await vectorCache.getEmbeddingByPath(
+      filePath,
+      imageAnalyzer.getModelInfo().name
+    )
+
+    if (existingEmbedding) {
+      console.log(`📋 Using cached embedding for query: ${filePath}`)
+      queryEmbedding = existingEmbedding.embedding
+    } else {
+      console.log(`🔍 Analyzing query image: ${filePath}`)
+      const queryResult = await imageAnalyzer.extractFeatures(filePath)
+      queryEmbedding = queryResult.embedding
+    }
+
+    // 유사한 파일 검색 (지정된 타입에서)
     const similarFiles = await vectorCache.findSimilar(
-      queryResult.embedding,
+      queryEmbedding,
       searchFileType,
       limit,
       threshold
@@ -209,11 +225,27 @@ async function handleVideoRecommendations(
 
     console.log(`🎬 Finding similar videos for: ${filePath}`)
 
-    // 유사한 파일 검색 (지정된 타입에서)
+    // 벡터 캐시에서 먼저 기존 임베딩 확인
     const vectorCache = await getVectorCache()
-    const queryResult = await videoAnalyzer.extractFeatures(filePath)
+    let queryEmbedding: number[]
+
+    const existingEmbedding = await vectorCache.getEmbeddingByPath(
+      filePath,
+      videoAnalyzer.getModelInfo().name
+    )
+
+    if (existingEmbedding) {
+      console.log(`📋 Using cached embedding for query: ${filePath}`)
+      queryEmbedding = existingEmbedding.embedding
+    } else {
+      console.log(`🔍 Analyzing query video: ${filePath}`)
+      const queryResult = await videoAnalyzer.extractFeatures(filePath)
+      queryEmbedding = queryResult.embedding
+    }
+
+    // 유사한 파일 검색 (지정된 타입에서)
     const similarFiles = await vectorCache.findSimilar(
-      queryResult.embedding,
+      queryEmbedding,
       searchFileType,
       limit,
       threshold

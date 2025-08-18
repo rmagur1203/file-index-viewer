@@ -393,13 +393,27 @@ export class AIImageAnalyzer {
     threshold: number = 0.7
   ): Promise<{ file: AIEmbedding; similarity: number }[]> {
     try {
-      // 쿼리 이미지 분석
-      const queryResult = await this.extractFeatures(queryImagePath)
+      // 벡터 캐시에서 먼저 기존 임베딩 확인
+      const vectorCache = await getVectorCache()
+      let queryEmbedding: number[]
+
+      const existingEmbedding = await vectorCache.getEmbeddingByPath(
+        queryImagePath,
+        this.modelName
+      )
+
+      if (existingEmbedding) {
+        console.log(`📋 Using cached embedding for query: ${queryImagePath}`)
+        queryEmbedding = existingEmbedding.embedding
+      } else {
+        console.log(`🔍 Analyzing query image: ${queryImagePath}`)
+        const queryResult = await this.extractFeatures(queryImagePath)
+        queryEmbedding = queryResult.embedding
+      }
 
       // 벡터 캐시에서 유사한 이미지 검색
-      const vectorCache = await getVectorCache()
       const results = await vectorCache.findSimilar(
-        queryResult.embedding,
+        queryEmbedding,
         'image',
         limit,
         threshold
