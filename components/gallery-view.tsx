@@ -9,7 +9,7 @@ import {
   Brain,
   Heart,
 } from 'lucide-react'
-import Image from 'next/image'
+import LazyImage from '@/components/lazy-image'
 import type { FileItem } from '@/types'
 import { useSettings } from '@/contexts/SettingsContext'
 import { Button } from '@/components/ui/button'
@@ -144,28 +144,42 @@ export default function GalleryView({
       const thumbnailUrl = isVideo
         ? `/api/thumbnail?path=${encodeURIComponent(file.path)}`
         : `/api/media${file.path}`
+
+      const fallbackIcon = isVideo ? (
+        <div className="w-full h-full flex items-center justify-center bg-muted">
+          <svg
+            className="w-8 h-8 text-red-500"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path d="M2 6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+          </svg>
+        </div>
+      ) : (
+        <div className="w-full h-full flex items-center justify-center bg-muted">
+          <svg
+            className="w-8 h-8 text-blue-500"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </div>
+      )
+
       return (
         <>
-          <Image
+          <LazyImage
             src={thumbnailUrl}
             alt={file.name}
             fill
             className="object-cover"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement
-              target.style.display = 'none'
-              const parent = target.parentElement
-              if (parent) {
-                const fallback = document.createElement('div')
-                fallback.className =
-                  'w-full h-full flex items-center justify-center bg-muted'
-                fallback.innerHTML = isVideo
-                  ? '<svg class="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6l2 2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"></path></svg>'
-                  : '<svg class="w-8 h-8 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path></svg>'
-                parent.appendChild(fallback)
-              }
-            }}
             unoptimized={!isVideo}
+            fallbackIcon={fallbackIcon}
           />
           <div className="absolute inset-0 bg-background/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             {isVideo ? (

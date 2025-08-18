@@ -13,11 +13,9 @@ import dynamic from 'next/dynamic'
 import ListView from './list-view'
 import GalleryView from './gallery-view'
 import { FileItem } from '@/hooks/useFileBrowser'
-import { SimilarImagesPanel } from './similar-images-panel'
+import { SimilarFilesPanel } from './similar-files-panel'
 import { Button } from '@/components/ui/button'
 import { Brain } from 'lucide-react'
-import { SimilarVideosPanel } from './similar-videos-panel'
-import { SimilarTextsPanel } from './similar-texts-panel'
 
 // 웹 검색 결과에 따른 SSR 안전 PDF 뷰어 로드
 const PdfJsViewer = dynamic(() => import('./pdfjs-viewer'), {
@@ -68,16 +66,8 @@ export default function FileBrowser({
 }: FileBrowserProps) {
   const [selectedMedia, setSelectedMedia] = useState<SelectedMedia | null>(null)
   const [renderPdfViewer, setRenderPdfViewer] = useState(false)
-  const [showSimilarImages, setShowSimilarImages] = useState(false)
-  const [similarImageQuery, setSimilarImageQuery] = useState<string | null>(
-    null
-  )
-  const [showSimilarVideos, setShowSimilarVideos] = useState(false)
-  const [similarVideoQuery, setSimilarVideoQuery] = useState<string | null>(
-    null
-  )
-  const [showSimilarTexts, setShowSimilarTexts] = useState(false)
-  const [similarTextQuery, setSimilarTextQuery] = useState<string | null>(null)
+  const [showSimilarFiles, setShowSimilarFiles] = useState(false)
+  const [similarFileQuery, setSimilarFileQuery] = useState<string | null>(null)
 
   const handlePrevVideo = () => {
     const videoFiles = files.filter((file) => file.mediaType === 'video')
@@ -130,16 +120,27 @@ export default function FileBrowser({
     }
   }
 
-  const handleSimilarImageSelect = (imagePath: string) => {
-    // 유사한 이미지가 선택되었을 때 해당 이미지를 표시
-    const fileName = imagePath.split('/').pop() || imagePath
-    setShowSimilarImages(false)
-    setSimilarImageQuery(null)
+  const handleSimilarFileSelect = (filePath: string) => {
+    // 유사한 파일이 선택되었을 때 해당 파일을 표시
+    const fileName = filePath.split('/').pop() || filePath
+    setShowSimilarFiles(false)
+    setSimilarFileQuery(null)
+
+    // 파일 타입 감지
+    let fileType: 'image' | 'video' | 'text' | 'pdf' = 'text'
+    if (filePath.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg|tiff|ico)$/i)) {
+      fileType = 'image'
+    } else if (filePath.match(/\.(mp4|mov|avi|mkv|webm|m4v|flv|wmv)$/i)) {
+      fileType = 'video'
+    } else if (filePath.match(/\.pdf$/i)) {
+      fileType = 'pdf'
+    }
+
     setSelectedMedia({
-      path: imagePath,
+      path: filePath,
       name: fileName,
-      type: 'image',
-      filePath: imagePath,
+      type: fileType,
+      filePath: filePath,
     })
   }
 
@@ -147,17 +148,8 @@ export default function FileBrowser({
     filePath: string,
     mediaType: 'image' | 'video' | 'pdf' | 'text'
   ) => {
-    if (mediaType === 'image') {
-      setSimilarImageQuery(filePath)
-      setShowSimilarImages(true)
-    } else if (mediaType === 'video') {
-      setSimilarVideoQuery(filePath)
-      setShowSimilarVideos(true)
-    } else {
-      // pdf -> text 로 취급
-      setSimilarTextQuery(filePath)
-      setShowSimilarTexts(true)
-    }
+    setSimilarFileQuery(filePath)
+    setShowSimilarFiles(true)
   }
 
   const filteredFiles = files.filter(
@@ -230,7 +222,7 @@ export default function FileBrowser({
               alt={selectedMedia.name}
               filePath={selectedMedia.filePath}
               onClose={() => setSelectedMedia(null)}
-              onImageSelect={handleSimilarImageSelect}
+              onImageSelect={handleSimilarFileSelect}
               onFindSimilar={(filePath) => handleFindSimilar(filePath, 'image')}
             />
           )}
@@ -281,63 +273,17 @@ export default function FileBrowser({
         </DialogContent>
       </Dialog>
 
-      {showSimilarImages && similarImageQuery && (
-        <SimilarImagesPanel
-          filePath={similarImageQuery}
-          open={showSimilarImages}
+      {showSimilarFiles && similarFileQuery && (
+        <SimilarFilesPanel
+          filePath={similarFileQuery}
+          open={showSimilarFiles}
           onOpenChange={(isOpen) => {
             if (!isOpen) {
-              setShowSimilarImages(false)
-              setSimilarImageQuery(null)
+              setShowSimilarFiles(false)
+              setSimilarFileQuery(null)
             }
           }}
-          onImageSelect={handleSimilarImageSelect}
-        />
-      )}
-      {showSimilarVideos && similarVideoQuery && (
-        <SimilarVideosPanel
-          filePath={similarVideoQuery}
-          open={showSimilarVideos}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) {
-              setShowSimilarVideos(false)
-              setSimilarVideoQuery(null)
-            }
-          }}
-          onVideoSelect={(videoPath) => {
-            setShowSimilarVideos(false)
-            setSimilarVideoQuery(null)
-            setSelectedMedia({
-              path: videoPath,
-              name: videoPath.split('/').pop() || videoPath,
-              type: 'video',
-              filePath: videoPath,
-            })
-          }}
-        />
-      )}
-      {showSimilarTexts && similarTextQuery && (
-        <SimilarTextsPanel
-          filePath={similarTextQuery}
-          open={showSimilarTexts}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) {
-              setShowSimilarTexts(false)
-              setSimilarTextQuery(null)
-            }
-          }}
-          onTextSelect={(textPath) => {
-            setShowSimilarTexts(false)
-            setSimilarTextQuery(null)
-            const directory = textPath.substring(0, textPath.lastIndexOf('/'))
-            const fileName = textPath.substring(textPath.lastIndexOf('/') + 1)
-            setSelectedMedia({
-              path: textPath,
-              name: fileName,
-              type: 'text',
-              filePath: textPath,
-            })
-          }}
+          onFileSelect={handleSimilarFileSelect}
         />
       )}
     </>

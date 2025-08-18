@@ -33,12 +33,51 @@ export async function GET(request: NextRequest) {
       filePath.startsWith('/') ? filePath.substring(1) : filePath
     )
 
-    // 파일 타입별 추천 처리
-    if (fileType === 'image' || isImage(filePath)) {
+    // 실제 파일 타입 감지
+    const actualIsImage = isImage(filePath)
+    const actualIsVideo = isVideo(filePath)
+    const actualIsText = isText(filePath)
+
+    // 파일 타입이 명시적으로 요청된 경우, 실제 파일 타입과 일치하는지 확인
+    if (fileType) {
+      if (fileType === 'image' && !actualIsImage) {
+        return NextResponse.json(
+          { 
+            error: '파일 타입이 일치하지 않습니다', 
+            message: '이미지 분석을 요청했지만 이 파일은 이미지가 아닙니다.',
+            actualFileType: actualIsVideo ? 'video' : actualIsText ? 'text' : 'unknown'
+          },
+          { status: 400 }
+        )
+      }
+      if (fileType === 'video' && !actualIsVideo) {
+        return NextResponse.json(
+          { 
+            error: '파일 타입이 일치하지 않습니다', 
+            message: '비디오 분석을 요청했지만 이 파일은 비디오가 아닙니다.',
+            actualFileType: actualIsImage ? 'image' : actualIsText ? 'text' : 'unknown'
+          },
+          { status: 400 }
+        )
+      }
+      if (fileType === 'text' && !actualIsText) {
+        return NextResponse.json(
+          { 
+            error: '파일 타입이 일치하지 않습니다', 
+            message: '텍스트 분석을 요청했지만 이 파일은 텍스트가 아닙니다.',
+            actualFileType: actualIsImage ? 'image' : actualIsVideo ? 'video' : 'unknown'
+          },
+          { status: 400 }
+        )
+      }
+    }
+
+    // 파일 타입별 추천 처리 (요청된 타입 우선, 없으면 자동 감지)
+    if ((fileType === 'image') || (!fileType && actualIsImage)) {
       return await handleImageRecommendations(fullPath, limit, threshold)
-    } else if (fileType === 'video' || isVideo(filePath)) {
+    } else if ((fileType === 'video') || (!fileType && actualIsVideo)) {
       return await handleVideoRecommendations(fullPath, limit, threshold)
-    } else if (fileType === 'text' || isText(filePath)) {
+    } else if ((fileType === 'text') || (!fileType && actualIsText)) {
       return await handleTextRecommendations(fullPath, limit, threshold)
     } else {
       return NextResponse.json(

@@ -29,7 +29,7 @@ import {
   serializeThresholds,
 } from '@/lib/threshold-presets'
 import { ThresholdSettings } from '@/components/threshold-settings'
-import Image from 'next/image'
+import LazyImage from '@/components/lazy-image'
 
 interface ScanResult {
   groups: DuplicateGroup[]
@@ -424,7 +424,7 @@ function DuplicateGroupCard({
             {/* 대표 이미지 미리보기 */}
             <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
               {!imageError ? (
-                <Image
+                <LazyImage
                   src={
                     group.type === 'image'
                       ? `/api/media${encodeURI(representativeFile.relativePath)}`
@@ -531,7 +531,7 @@ function DuplicateFileCard({
       {/* 썸네일 또는 아이콘 */}
       <div className="aspect-video bg-muted rounded mb-3 flex items-center justify-center overflow-hidden">
         {!imageError ? (
-          <Image
+          <LazyImage
             src={
               group.type === 'image'
                 ? `/api/media${encodeURI(file.relativePath)}`
