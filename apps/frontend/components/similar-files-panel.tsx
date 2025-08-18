@@ -83,7 +83,7 @@ export const SimilarFilesPanel: React.FC<SimilarFilesPanelProps> = ({
     setError(null)
     try {
       const response = await fetch(
-        `/api/ai-recommendations?filePath=${encodeURIComponent(filePath)}&threshold=${threshold}&limit=${limit}&fileType=${selectedFileType}`
+        `${BACKEND_API_URL}/api/ai-recommendations?filePath=${encodeURIComponent(filePath)}&threshold=${threshold}&limit=${limit}&fileType=${selectedFileType}`
       )
 
       if (!response.ok) {

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { BACKEND_API_URL } from '@/lib/config'
 // import { Input } from '@/components/ui/input'
 import { Progress } from '@/components/ui/progress'
 import {
@@ -83,7 +84,9 @@ export default function AIRecommendationsPage() {
 
   const loadStats = async () => {
     try {
-      const response = await fetch('/api/ai-recommendations/stats')
+      const response = await fetch(
+        `${BACKEND_API_URL}/api/ai-recommendations/stats`
+      )
       if (response.ok) {
         const data = await response.json()
         if (data.success) {
@@ -109,7 +112,7 @@ export default function AIRecommendationsPage() {
       })
 
       const eventSource = new EventSource(
-        `/api/ai-recommendations/analyze?${params.toString()}`
+        `${BACKEND_API_URL}/api/ai-recommendations/analyze?${params.toString()}`
       )
 
       eventSource.onmessage = (event) => {

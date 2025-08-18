@@ -53,7 +53,7 @@ export class VectorCache {
 
       // 데이터베이스 열기
       this.db = new Database(this.dbPath);
-      this.db.defaultSafeIntegers(true);
+      // this.db.defaultSafeIntegers(true);
 
       // sqlite-vec 확장 로딩 시도
       try {

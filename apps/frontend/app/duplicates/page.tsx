@@ -64,7 +64,7 @@ export default function DuplicatesPage() {
       // 임계값을 URL 파라미터로 직렬화
       const params = new URLSearchParams(serializeThresholds(thresholds))
       const eventSource = new EventSource(
-        `/api/duplicates/progress?${params.toString()}`
+        `${BACKEND_API_URL}/api/duplicates/progress?${params.toString()}`
       )
 
       eventSource.onmessage = (event) => {
@@ -149,7 +149,7 @@ export default function DuplicatesPage() {
 
     const filePaths = Array.from(selectedFiles)
     try {
-      const response = await fetch('/api/duplicates', {
+      const response = await fetch(`${BACKEND_API_URL}/api/duplicates`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

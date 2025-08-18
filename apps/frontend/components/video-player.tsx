@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { useSettings } from '@/contexts/SettingsContext'
+import { BACKEND_API_URL } from '@/lib/config'
 import { Badge } from './ui/badge'
 
 interface VideoPlayerProps {
@@ -56,11 +57,14 @@ export default function VideoPlayer({
       if (!filePath) return
       setIsLoadingTags(true)
       try {
-        const response = await fetch('/api/ai-recommendations/classify-video', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ videoPath: filePath }),
-        })
+        const response = await fetch(
+          `${BACKEND_API_URL}/api/ai-recommendations/classify-video`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ videoPath: filePath }),
+          }
+        )
         if (response.ok) {
           const data = await response.json()
           setClassification(data)

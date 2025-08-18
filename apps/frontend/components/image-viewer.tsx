@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
+import { BACKEND_API_URL } from '@/lib/config'
 import { Badge } from './ui/badge'
 
 interface ImageViewerProps {
@@ -53,11 +54,14 @@ export default function ImageViewer({
       if (!filePath) return
       setIsLoadingTags(true)
       try {
-        const response = await fetch('/api/ai-recommendations/classify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imagePath: filePath }),
-        })
+        const response = await fetch(
+          `${BACKEND_API_URL}/api/ai-recommendations/classify`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imagePath: filePath }),
+          }
+        )
         if (response.ok) {
           const data = await response.json()
           setClassification(data)
