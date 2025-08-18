@@ -22,6 +22,12 @@ export const CACHE_DIR =
 // OpenAI API 키
 export const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 
+// 비디오 분석 최대 키프레임 수
+export const MAX_KEYFRAMES = parseInt(process.env.MAX_KEYFRAMES || "1000");
+
+// 비디오 분석 프레임 간격
+export const FRAME_INTERVAL = parseInt(process.env.FRAME_INTERVAL || "5");
+
 // 서버 포트
 export const PORT = parseInt(process.env.PORT || "3001");
 
