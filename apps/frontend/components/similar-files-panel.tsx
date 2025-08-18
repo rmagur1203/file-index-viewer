@@ -199,7 +199,7 @@ export const SimilarFilesPanel: React.FC<SimilarFilesPanelProps> = ({
 
       return (
         <LazyImage
-          src={`/api/thumbnail?path=${encodeURIComponent(filePathStr)}`}
+          src={`${BACKEND_API_URL}/api/thumbnail?path=${encodeURIComponent(filePathStr)}`}
           alt={filePathStr}
           width={200}
           height={128}
