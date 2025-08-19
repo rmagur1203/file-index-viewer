@@ -19,5 +19,5 @@ await Bun.build({
   minify: true,
   splitting: true,
   sourcemap: "linked",
-  bytecode: true,
+  bytecode: false,
 });
