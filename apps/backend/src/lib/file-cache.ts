@@ -139,6 +139,7 @@ export class FileCache {
     currentSize: number,
     currentModifiedAt: string
   ): Promise<boolean> {
+    return false;
     const cached = await this.getCachedFileInfo(filePath);
     if (!cached) {
       return true; // 캐시에 없으면 변경된 것으로 간주

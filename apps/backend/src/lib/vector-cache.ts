@@ -590,6 +590,159 @@ export class VectorCache {
   }
 
   /**
+   * 파일 경로로 임베딩 조회 (추천 엔진용)
+   */
+  async getEmbedding(filePath: string): Promise<AIEmbedding | null> {
+    return this.getEmbeddingByPath(filePath);
+  }
+
+  /**
+   * 벡터 유사도 검색 (추천 엔진용)
+   */
+  async findSimilarByVector(
+    queryVector: number[],
+    fileType: "image" | "video" | "text",
+    limit: number = 10
+  ): Promise<SimilarityResult[]> {
+    if (!this.db) {
+      throw new Error("Vector database not available");
+    }
+
+    const tableName =
+      fileType === "text" ? "vec_embeddings_text" : "vec_embeddings_media";
+
+    try {
+      if (!this.vecLoaded) {
+        throw new Error("Vector extension not loaded");
+      }
+      // sqlite-vec를 사용한 유사도 검색
+      const query = `
+        SELECT 
+          ae.id, ae.file_path, ae.file_type, ae.model_name, 
+          ae.embedding_json, ae.extracted_at, ae.metadata_json,
+          vec.distance
+        FROM ${tableName} vec
+        JOIN ai_embeddings ae ON vec.rowid = ae.rowid
+        WHERE ae.file_type = ?
+        ORDER BY vec.distance
+        LIMIT ?
+      `;
+
+      // 벡터를 JSON 문자열로 변환
+      const vectorJson = JSON.stringify(queryVector);
+
+      // SQLite-vec 검색 실행
+      const results = this.db
+        .prepare(
+          `
+        SELECT 
+          ae.id, ae.file_path, ae.file_type, ae.model_name, 
+          ae.embedding_json, ae.extracted_at, ae.metadata_json,
+          vec_distance_cosine(vec.embedding, ?) as distance
+        FROM ${tableName} vec
+        JOIN ai_embeddings ae ON vec.rowid = ae.rowid
+        WHERE ae.file_type = ?
+        ORDER BY distance ASC
+        LIMIT ?
+      `
+        )
+        .all(vectorJson, fileType, limit) as any[];
+
+      return results.map((row) => ({
+        file: this.rowToEmbedding(row),
+        similarity: Math.max(0, 1 - row.distance), // 거리를 유사도로 변환
+        distance: row.distance,
+      }));
+    } catch (error) {
+      console.warn("Vector search failed, falling back to brute force:", error);
+      // 벡터 검색 실패 시 brute force 검색으로 fallback
+      return this.bruteForceSimilaritySearch(queryVector, fileType, limit);
+    }
+  }
+
+  /**
+   * Brute force 유사도 검색 (fallback)
+   */
+  private async bruteForceSimilaritySearch(
+    queryVector: number[],
+    fileType: "image" | "video" | "text",
+    limit: number
+  ): Promise<SimilarityResult[]> {
+    if (!this.db) throw new Error("Database not initialized");
+
+    const rows = this.db
+      .prepare("SELECT * FROM ai_embeddings WHERE file_type = ?")
+      .all(fileType) as any[];
+
+    const results: SimilarityResult[] = [];
+
+    for (const row of rows) {
+      try {
+        const embedding = this.rowToEmbedding(row);
+        const similarity = this.calculateCosineSimilarity(
+          queryVector,
+          embedding.embedding
+        );
+
+        results.push({
+          file: embedding,
+          similarity,
+          distance: 1 - similarity,
+        });
+      } catch (error) {
+        console.warn(
+          `Failed to process embedding for ${row.file_path}:`,
+          error
+        );
+      }
+    }
+
+    // 유사도 기준 내림차순 정렬
+    results.sort((a, b) => b.similarity - a.similarity);
+
+    return results.slice(0, limit);
+  }
+
+  /**
+   * 코사인 유사도 계산
+   */
+  private calculateCosineSimilarity(
+    vectorA: number[],
+    vectorB: number[]
+  ): number {
+    if (vectorA.length !== vectorB.length) return 0;
+
+    let dotProduct = 0;
+    let magnitudeA = 0;
+    let magnitudeB = 0;
+
+    for (let i = 0; i < vectorA.length; i++) {
+      dotProduct += vectorA[i] * vectorB[i];
+      magnitudeA += vectorA[i] * vectorA[i];
+      magnitudeB += vectorB[i] * vectorB[i];
+    }
+
+    magnitudeA = Math.sqrt(magnitudeA);
+    magnitudeB = Math.sqrt(magnitudeB);
+
+    if (magnitudeA === 0 || magnitudeB === 0) return 0;
+
+    return dotProduct / (magnitudeA * magnitudeB);
+  }
+
+  /**
+   * 파일 타입별 임베딩 개수 반환 (추천 엔진용)
+   */
+  async getEmbeddingCounts(): Promise<Record<string, number>> {
+    const stats = await this.getStats();
+    return {
+      image: stats.imageEmbeddings,
+      video: stats.videoEmbeddings,
+      text: stats.textEmbeddings,
+    };
+  }
+
+  /**
    * 데이터베이스 연결 종료
    */
   async close(): Promise<void> {

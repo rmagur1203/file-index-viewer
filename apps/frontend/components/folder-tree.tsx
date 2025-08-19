@@ -1,6 +1,6 @@
 'use client'
 
-import { Folder, Home } from 'lucide-react'
+import { Folder, Home, Heart, Sparkles, Settings } from 'lucide-react'
 import { FolderTree as FolderTreeData } from '@/hooks/useFileBrowser'
 import { useRouter, usePathname } from 'next/navigation'
 
@@ -77,6 +77,41 @@ export function FolderTree({ tree, currentPath, onNavigate }: FolderTreeProps) {
 
   return (
     <div className="w-1/4 min-w-[250px] bg-card border-r border-border overflow-y-auto hidden md:block">
+      {/* 네비게이션 메뉴 */}
+      <div className="p-4 border-b border-border">
+        <h2 className="text-lg font-semibold mb-3">탐색</h2>
+        <div className="space-y-1">
+          <button
+            onClick={() => router.push('/recommendations')}
+            className={`flex items-center gap-2 p-2 rounded hover:bg-muted text-sm w-full text-left transition-colors ${
+              safePathname === '/recommendations' ? 'bg-primary text-primary-foreground' : ''
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>AI 추천</span>
+          </button>
+          <button
+            onClick={() => router.push('/likes')}
+            className={`flex items-center gap-2 p-2 rounded hover:bg-muted text-sm w-full text-left transition-colors ${
+              safePathname === '/likes' ? 'bg-primary text-primary-foreground' : ''
+            }`}
+          >
+            <Heart className="w-4 h-4" />
+            <span>좋아요</span>
+          </button>
+          <button
+            onClick={() => router.push('/ai-recommendations')}
+            className={`flex items-center gap-2 p-2 rounded hover:bg-muted text-sm w-full text-left transition-colors ${
+              safePathname === '/ai-recommendations' ? 'bg-primary text-primary-foreground' : ''
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            <span>AI 분석</span>
+          </button>
+        </div>
+      </div>
+      
+      {/* 폴더 구조 */}
       <div className="p-4 border-b border-border">
         <h2 className="text-lg font-semibold flex items-center gap-2">
           <Folder className="w-5 h-5 text-yellow-500" />
@@ -87,7 +122,7 @@ export function FolderTree({ tree, currentPath, onNavigate }: FolderTreeProps) {
         <button
           onClick={handleRootClick}
           className={`flex items-center gap-2 p-2 rounded hover:bg-muted text-sm w-full text-left ${
-            currentPath === '/' ? 'bg-muted text-primary' : ''
+            currentPath === '/' && safePathname === '/' ? 'bg-muted text-primary' : ''
           }`}
         >
           <Home className="w-4 h-4" />

@@ -7,6 +7,7 @@ import likes from "./src/routes/likes";
 import duplicates from "./src/routes/duplicates";
 import thumbnail from "./src/routes/thumbnail";
 import aiRecommendations from "./src/routes/ai-recommendations";
+import recommendations from "./src/routes/recommendations";
 import cache from "./src/routes/cache";
 import media from "./src/routes/media";
 
@@ -40,6 +41,7 @@ api.route("/likes", likes);
 api.route("/duplicates", duplicates);
 api.route("/thumbnail", thumbnail);
 api.route("/ai-recommendations", aiRecommendations);
+api.route("/recommendations", recommendations);
 api.route("/cache", cache);
 api.route("/media", media);
 
@@ -55,6 +57,9 @@ console.log(`🔍 Duplicates API: http://localhost:${port}/api/duplicates`);
 console.log(`🖼️ Thumbnail API: http://localhost:${port}/api/thumbnail`);
 console.log(
   `🤖 AI Recommendations API: http://localhost:${port}/api/ai-recommendations`
+);
+console.log(
+  `✨ Personal Recommendations API: http://localhost:${port}/api/recommendations`
 );
 console.log(`📦 Cache API: http://localhost:${port}/api/cache`);
 console.log(`🎬 Media API: http://localhost:${port}/api/media`);

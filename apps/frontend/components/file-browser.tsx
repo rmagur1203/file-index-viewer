@@ -56,6 +56,7 @@ interface FileBrowserProps {
   navigateTo: (path: string) => void
   searchTerm: string
   viewMode: 'list' | 'gallery'
+  isRecommendationView?: boolean
 }
 
 export default function FileBrowser({
@@ -64,6 +65,7 @@ export default function FileBrowser({
   navigateTo,
   searchTerm,
   viewMode,
+  isRecommendationView = false,
 }: FileBrowserProps) {
   const [selectedMedia, setSelectedMedia] = useState<SelectedMedia | null>(null)
   const [renderPdfViewer, setRenderPdfViewer] = useState(false)
@@ -174,12 +176,17 @@ export default function FileBrowser({
     <>
       <div className={viewMode === 'list' ? 'p-4' : ''}>
         {viewMode === 'list' ? (
-          <ListView files={filteredFiles} onFileClick={handleFileClick} />
+          <ListView 
+            files={filteredFiles} 
+            onFileClick={handleFileClick}
+            isRecommendationView={isRecommendationView}
+          />
         ) : (
           <GalleryView
             files={filteredFiles}
             onFileClick={handleFileClick}
             onFindSimilar={handleFindSimilar}
+            isRecommendationView={isRecommendationView}
           />
         )}
       </div>

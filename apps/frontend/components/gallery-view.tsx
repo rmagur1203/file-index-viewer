@@ -24,12 +24,14 @@ interface GalleryViewProps {
     filePath: string,
     mediaType: 'image' | 'video' | 'pdf' | 'text'
   ) => void
+  isRecommendationView?: boolean
 }
 
 export default function GalleryView({
   files,
   onFileClick,
   onFindSimilar,
+  isRecommendationView = false,
 }: GalleryViewProps) {
   const { settings } = useSettings()
   const [likedFiles, setLikedFiles] = useState<Set<string>>(new Set())
@@ -313,6 +315,29 @@ export default function GalleryView({
               <p className="text-xs text-gray-400 mt-1">
                 {formatFileSize(file.size)}
               </p>
+            )}
+            {isRecommendationView && file.recommendationScore && (
+              <div className="mt-2 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-300">추천도</span>
+                  <div 
+                    className={`px-2 py-1 rounded text-xs font-medium ${
+                      file.recommendationScore > 0.8 
+                        ? 'bg-green-900 text-green-200'
+                        : file.recommendationScore > 0.6 
+                        ? 'bg-yellow-900 text-yellow-200'
+                        : 'bg-blue-900 text-blue-200'
+                    }`}
+                  >
+                    {Math.round(file.recommendationScore * 100)}%
+                  </div>
+                </div>
+                {file.recommendationReason && (
+                  <p className="text-xs text-gray-400 truncate" title={file.recommendationReason}>
+                    {file.recommendationReason}
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </div>

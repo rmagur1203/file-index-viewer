@@ -8,6 +8,9 @@ export interface FileItem {
   thumbnail?: string
   mediaType?: 'video' | 'image' | 'pdf'
   accessDenied?: boolean
+  // 추천 관련 속성
+  recommendationScore?: number
+  recommendationReason?: string
 }
 
 export interface FolderTree {

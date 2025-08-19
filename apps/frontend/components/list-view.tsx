@@ -20,9 +20,10 @@ import { Button } from '@repo/ui'
 interface ListViewProps {
   files: FileItem[]
   onFileClick: (file: FileItem) => void
+  isRecommendationView?: boolean
 }
 
-export default function ListView({ files, onFileClick }: ListViewProps) {
+export default function ListView({ files, onFileClick, isRecommendationView = false }: ListViewProps) {
   const { settings } = useSettings()
   const [likedFiles, setLikedFiles] = useState<Set<string>>(new Set())
 
@@ -210,6 +211,12 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
             <th className="text-left p-3 font-medium">이름</th>
             <th className="text-left p-3 font-medium w-24">크기</th>
             <th className="text-left p-3 font-medium w-40">수정일</th>
+            {isRecommendationView && (
+              <>
+                <th className="text-left p-3 font-medium w-20">추천도</th>
+                <th className="text-left p-3 font-medium w-32">이유</th>
+              </>
+            )}
             <th className="text-left p-3 font-medium w-12"></th>
           </tr>
         </thead>
@@ -246,6 +253,37 @@ export default function ListView({ files, onFileClick }: ListViewProps) {
               <td className="p-3 text-muted-foreground text-sm">
                 {formatDate(file.modifiedAt)}
               </td>
+              {isRecommendationView && (
+                <>
+                  <td className="p-3 text-sm">
+                    {file.recommendationScore ? (
+                      <div className="flex items-center gap-1">
+                        <div 
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            file.recommendationScore > 0.8 
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                              : file.recommendationScore > 0.6 
+                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                              : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                          }`}
+                        >
+                          {Math.round(file.recommendationScore * 100)}%
+                        </div>
+                      </div>
+                    ) : (
+                      '-'
+                    )}
+                  </td>
+                  <td className="p-3 text-sm text-muted-foreground">
+                    <span 
+                      className="truncate max-w-32 block" 
+                      title={file.recommendationReason}
+                    >
+                      {file.recommendationReason || '-'}
+                    </span>
+                  </td>
+                </>
+              )}
               <td className="p-3">
                 {file.type === 'file' && (
                   <Button
