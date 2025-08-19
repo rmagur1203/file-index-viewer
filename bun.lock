@@ -25,6 +25,7 @@
         "pdf-parse": "^1.1.1",
         "pdfjs-dist": "^5.4.54",
         "sharp": "^0.33.2",
+        "sqlite-vec": "^0.1.7-alpha.2",
         "tesseract.js": "^5.0.4",
       },
       "devDependencies": {
@@ -1340,6 +1341,18 @@
     "source-map-js": ["source-map-js@1.2.1", "", {}, "sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA=="],
 
     "sprintf-js": ["sprintf-js@1.0.3", "", {}, "sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g=="],
+
+    "sqlite-vec": ["sqlite-vec@0.1.7-alpha.2", "", { "optionalDependencies": { "sqlite-vec-darwin-arm64": "0.1.7-alpha.2", "sqlite-vec-darwin-x64": "0.1.7-alpha.2", "sqlite-vec-linux-arm64": "0.1.7-alpha.2", "sqlite-vec-linux-x64": "0.1.7-alpha.2", "sqlite-vec-windows-x64": "0.1.7-alpha.2" } }, "sha512-rNgRCv+4V4Ed3yc33Qr+nNmjhtrMnnHzXfLVPeGb28Dx5mmDL3Ngw/Wk8vhCGjj76+oC6gnkmMG8y73BZWGBwQ=="],
+
+    "sqlite-vec-darwin-arm64": ["sqlite-vec-darwin-arm64@0.1.7-alpha.2", "", { "os": "darwin", "cpu": "arm64" }, "sha512-raIATOqFYkeCHhb/t3r7W7Cf2lVYdf4J3ogJ6GFc8PQEgHCPEsi+bYnm2JT84MzLfTlSTIdxr4/NKv+zF7oLPw=="],
+
+    "sqlite-vec-darwin-x64": ["sqlite-vec-darwin-x64@0.1.7-alpha.2", "", { "os": "darwin", "cpu": "x64" }, "sha512-jeZEELsQjjRsVojsvU5iKxOvkaVuE+JYC8Y4Ma8U45aAERrDYmqZoHvgSG7cg1PXL3bMlumFTAmHynf1y4pOzA=="],
+
+    "sqlite-vec-linux-arm64": ["sqlite-vec-linux-arm64@0.1.7-alpha.2", "", { "os": "linux", "cpu": "arm64" }, "sha512-6Spj4Nfi7tG13jsUG+W7jnT0bCTWbyPImu2M8nWp20fNrd1SZ4g3CSlDAK8GBdavX7wRlbBHCZ+BDa++rbDewA=="],
+
+    "sqlite-vec-linux-x64": ["sqlite-vec-linux-x64@0.1.7-alpha.2", "", { "os": "linux", "cpu": "x64" }, "sha512-IcgrbHaDccTVhXDf8Orwdc2+hgDLAFORl6OBUhcvlmwswwBP1hqBTSEhovClG4NItwTOBNgpwOoQ7Qp3VDPWLg=="],
+
+    "sqlite-vec-windows-x64": ["sqlite-vec-windows-x64@0.1.7-alpha.2", "", { "os": "win32", "cpu": "x64" }, "sha512-TRP6hTjAcwvQ6xpCZvjP00pdlda8J38ArFy1lMYhtQWXiIBmWnhMaMbq4kaeCYwvTTddfidatRS+TJrwIKB/oQ=="],
 
     "stable-hash": ["stable-hash@0.0.5", "", {}, "sha512-+L3ccpzibovGXFK+Ap/f8LOS0ahMrHTf3xu7mMLSpEGU0EO9ucaysSylKo9eRDFNhWve/y275iPmIZ4z39a9iA=="],
 

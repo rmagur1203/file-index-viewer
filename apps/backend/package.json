@@ -21,6 +21,7 @@
     "pdf-parse": "^1.1.1",
     "pdfjs-dist": "^5.4.54",
     "sharp": "^0.33.2",
+    "sqlite-vec": "^0.1.7-alpha.2",
     "tesseract.js": "^5.0.4"
   },
   "devDependencies": {

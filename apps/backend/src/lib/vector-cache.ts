@@ -3,7 +3,7 @@ import path from "path";
 import { promises as fs } from "fs";
 import { DATABASE_DIR } from "./config";
 // Note: sqlite-vec may need to be handled differently with bun:sqlite
-// import * as sqliteVec from 'sqlite-vec'
+import * as sqliteVec from "sqlite-vec";
 
 export interface AIEmbedding {
   id: string;
