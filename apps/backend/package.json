@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "bun run --watch index.ts",
     "start": "bun run index.ts",
-    "build": "bun build index.ts --outdir ./dist",
+    "build": "bun build index.ts --outdir ./dist --target=bun --external=sharp --external=canvas --external=pdf-parse --external=tesseract.js --external=@tensorflow/tfjs-node --external=@xenova/transformers --external=ffmpeg-static",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {

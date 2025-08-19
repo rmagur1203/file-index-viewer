@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 import path from 'path'
-import CopyPlugin from 'copy-webpack-plugin'
 // import webpack from 'webpack'
 // const { NormalModuleReplacementPlugin } = webpack
 

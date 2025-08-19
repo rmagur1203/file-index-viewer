@@ -64,10 +64,11 @@ const renderTree = (
 export function FolderTree({ tree, currentPath, onNavigate }: FolderTreeProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const safePathname = pathname || '/'
 
   const handleRootClick = () => {
     // 설정 페이지나 다른 페이지에서 루트를 클릭하면 메인 페이지로 이동
-    if (pathname !== '/') {
+    if (safePathname !== '/') {
       router.push('/?path=%2F')
     } else {
       onNavigate('/')
@@ -92,7 +93,7 @@ export function FolderTree({ tree, currentPath, onNavigate }: FolderTreeProps) {
           <Home className="w-4 h-4" />
           <span>루트</span>
         </button>
-        {renderTree(tree, currentPath, onNavigate, pathname, router)}
+        {renderTree(tree, currentPath, onNavigate, safePathname, router)}
       </div>
     </div>
   )
