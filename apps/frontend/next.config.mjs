@@ -44,6 +44,17 @@ const nextConfig = {
         hostname: 'localhost',
         pathname: '/api/**',
       },
+      // API 서버 URL
+      {
+        protocol: 'http',
+        hostname: new URL(process.env.NEXT_PUBLIC_API_URL).hostname,
+        pathname: '/api/**',
+      },
+      {
+        protocol: 'https',
+        hostname: new URL(process.env.NEXT_PUBLIC_API_URL).hostname,
+        pathname: '/api/**',
+      },
     ],
   },
 }
