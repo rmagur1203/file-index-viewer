@@ -28,7 +28,7 @@ import {
   DialogDescription,
 } from '@repo/ui'
 import LazyImage from '@/components/lazy-image'
-import { BACKEND_API_URL } from '@/lib/config'
+import { API_URL } from '@/lib/config'
 import { isImage, isVideo, isText, isPdf } from '@/lib/utils'
 
 interface SimilarFile {
@@ -81,7 +81,7 @@ export const SimilarFilesPanel: React.FC<SimilarFilesPanelProps> = ({
     setError(null)
     try {
       const response = await fetch(
-        `${BACKEND_API_URL}/api/ai-recommendations?filePath=${encodeURIComponent(filePath)}&threshold=${threshold}&limit=${limit}&fileType=${selectedFileType}`
+        `${API_URL}/api/ai-recommendations?filePath=${encodeURIComponent(filePath)}&threshold=${threshold}&limit=${limit}&fileType=${selectedFileType}`
       )
 
       if (!response.ok) {
@@ -172,7 +172,7 @@ export const SimilarFilesPanel: React.FC<SimilarFilesPanelProps> = ({
 
       return (
         <LazyImage
-          src={`${BACKEND_API_URL}/api/media${filePathStr}?thumbnail=true`}
+          src={`${API_URL}/api/media${filePathStr}?thumbnail=true`}
           alt={filePathStr}
           width={200}
           height={128}
@@ -197,7 +197,7 @@ export const SimilarFilesPanel: React.FC<SimilarFilesPanelProps> = ({
 
       return (
         <LazyImage
-          src={`${BACKEND_API_URL}/api/thumbnail?path=${encodeURIComponent(filePathStr)}`}
+          src={`${API_URL}/api/thumbnail?path=${encodeURIComponent(filePathStr)}`}
           alt={filePathStr}
           width={200}
           height={128}

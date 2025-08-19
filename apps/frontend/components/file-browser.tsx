@@ -15,7 +15,7 @@ import ListView from './list-view'
 import GalleryView from './gallery-view'
 import { FileItem } from '@/hooks/useFileBrowser'
 import { SimilarFilesPanel } from './similar-files-panel'
-import { BACKEND_API_URL } from '@/lib/config'
+import { API_URL } from '@/lib/config'
 import { Brain } from 'lucide-react'
 
 // 웹 검색 결과에 따른 SSR 안전 PDF 뷰어 로드
@@ -206,7 +206,7 @@ export default function FileBrowser({
                 </DialogTitle>
               </DialogHeader>
               <VideoPlayer
-                src={`${BACKEND_API_URL}/api/media${selectedMedia.path}`}
+                src={`${API_URL}/api/media${selectedMedia.path}`}
                 filePath={selectedMedia.filePath}
                 onClose={() => setSelectedMedia(null)}
                 onPrevVideo={handlePrevVideo}
@@ -219,7 +219,7 @@ export default function FileBrowser({
           )}
           {selectedMedia?.type === 'image' && (
             <ImageViewer
-              src={`${BACKEND_API_URL}/api/media${selectedMedia.path}`}
+              src={`${API_URL}/api/media${selectedMedia.path}`}
               alt={selectedMedia.name}
               filePath={selectedMedia.filePath}
               onClose={() => setSelectedMedia(null)}
@@ -229,7 +229,7 @@ export default function FileBrowser({
           )}
           {selectedMedia?.type === 'pdf' && renderPdfViewer && (
             <PdfJsViewer
-              src={`${BACKEND_API_URL}/api/media${selectedMedia.path}`}
+              src={`${API_URL}/api/media${selectedMedia.path}`}
               fileName={selectedMedia.name}
               onClose={() => setSelectedMedia(null)}
               onFindSimilar={() => handleFindSimilar(selectedMedia.path, 'pdf')}
@@ -257,7 +257,7 @@ export default function FileBrowser({
               </DialogHeader>
               <div className="flex-1 overflow-y-auto">
                 <TextViewer
-                  src={`${BACKEND_API_URL}/api/media${selectedMedia.path}`}
+                  src={`${API_URL}/api/media${selectedMedia.path}`}
                 />
               </div>
             </>

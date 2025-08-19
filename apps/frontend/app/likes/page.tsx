@@ -7,6 +7,7 @@ import { useBrowser } from '@/contexts/BrowserContext'
 import { FileItem } from '@/types'
 import { toast } from 'sonner'
 import { Frown } from 'lucide-react'
+import { API_URL } from '@/lib/config'
 
 export default function LikesPage() {
   const [initialFiles, setInitialFiles] = useState<FileItem[]>([])
@@ -18,12 +19,10 @@ export default function LikesPage() {
     const fetchLikedFiles = async () => {
       setIsLoading(true)
       try {
-        const API_BASE_URL =
-          process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-        const response = await fetch(`${API_BASE_URL}/api/likes`)
+        const response = await fetch(`${API_URL}/api/likes`)
         if (response.ok) {
           const likedPaths: string[] = await response.json()
-          const fileDetailsResponse = await fetch(`${API_BASE_URL}/api/files`, {
+          const fileDetailsResponse = await fetch(`${API_URL}/api/files`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ paths: likedPaths }),

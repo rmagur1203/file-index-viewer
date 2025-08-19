@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import { Button, Badge } from '@repo/ui'
 import Image from 'next/image'
-import { BACKEND_API_URL } from '@/lib/config'
+import { API_URL } from '@/lib/config'
 
 interface ImageViewerProps {
   src: string
@@ -54,7 +54,7 @@ export default function ImageViewer({
       setIsLoadingTags(true)
       try {
         const response = await fetch(
-          `${BACKEND_API_URL}/api/ai-recommendations/classify`,
+          `${API_URL}/api/ai-recommendations/classify`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

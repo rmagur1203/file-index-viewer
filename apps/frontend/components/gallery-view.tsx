@@ -12,7 +12,7 @@ import {
 import LazyImage from '@/components/lazy-image'
 import type { FileItem } from '@/types'
 import { useSettings } from '@/contexts/SettingsContext'
-import { BACKEND_API_URL } from '@/lib/config'
+import { API_URL } from '@/lib/config'
 import { Button } from '@repo/ui'
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
@@ -37,9 +37,7 @@ export default function GalleryView({
   useEffect(() => {
     const fetchLikedFiles = async () => {
       try {
-        const API_BASE_URL =
-          process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-        const response = await fetch(`${API_BASE_URL}/api/likes`)
+        const response = await fetch(`${API_URL}/api/likes`)
         if (response.ok) {
           const likedPaths = await response.json()
           setLikedFiles(new Set(likedPaths))
@@ -60,10 +58,8 @@ export default function GalleryView({
     const newLikedFiles = new Set(likedFiles)
 
     try {
-      const API_BASE_URL =
-        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
       if (isLiked) {
-        const response = await fetch(`${API_BASE_URL}/api/likes${file.path}`, {
+        const response = await fetch(`${API_URL}/api/likes${file.path}`, {
           method: 'DELETE',
         })
         if (response.ok) {
@@ -73,7 +69,7 @@ export default function GalleryView({
           throw new Error('Failed to unlike the file.')
         }
       } else {
-        const response = await fetch(`${API_BASE_URL}/api/likes`, {
+        const response = await fetch(`${API_URL}/api/likes`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ path: file.path }),
@@ -147,8 +143,8 @@ export default function GalleryView({
     if (file.mediaType === 'image' || file.mediaType === 'video') {
       const isVideo = file.mediaType === 'video'
       const thumbnailUrl = isVideo
-        ? `${BACKEND_API_URL}/api/thumbnail?path=${encodeURIComponent(file.path)}`
-        : `${BACKEND_API_URL}/api/media${file.path}`
+        ? `${API_URL}/api/thumbnail?path=${encodeURIComponent(file.path)}`
+        : `${API_URL}/api/media${file.path}`
 
       const fallbackIcon = isVideo ? (
         <div className="w-full h-full flex items-center justify-center bg-muted">

@@ -28,7 +28,7 @@ import type {
   SimilarityThresholds,
 } from '@/types'
 import { formatFileSize } from '@/lib/utils'
-import { BACKEND_API_URL } from '@/lib/config'
+import { API_URL } from '@/lib/config'
 import {
   DEFAULT_THRESHOLDS,
   serializeThresholds,
@@ -68,7 +68,7 @@ export default function DuplicatesPage() {
       // 임계값을 URL 파라미터로 직렬화
       const params = new URLSearchParams(serializeThresholds(thresholds))
       const eventSource = new EventSource(
-        `${BACKEND_API_URL}/api/duplicates/progress?${params.toString()}`
+        `${API_URL}/api/duplicates/progress?${params.toString()}`
       )
 
       eventSource.onmessage = (event) => {
@@ -153,7 +153,7 @@ export default function DuplicatesPage() {
 
     const filePaths = Array.from(selectedFiles)
     try {
-      const response = await fetch(`${BACKEND_API_URL}/api/duplicates`, {
+      const response = await fetch(`${API_URL}/api/duplicates`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -432,8 +432,8 @@ function DuplicateGroupCard({
                 <LazyImage
                   src={
                     group.type === 'image'
-                      ? `${BACKEND_API_URL}/api/media${encodeURI(representativeFile.relativePath)}`
-                      : `${BACKEND_API_URL}/api/thumbnail?path=${encodeURIComponent(representativeFile.relativePath)}`
+                      ? `${API_URL}/api/media${encodeURI(representativeFile.relativePath)}`
+                      : `${API_URL}/api/thumbnail?path=${encodeURIComponent(representativeFile.relativePath)}`
                   }
                   alt={representativeFile.name}
                   width={64}
@@ -539,8 +539,8 @@ function DuplicateFileCard({
           <LazyImage
             src={
               group.type === 'image'
-                ? `${BACKEND_API_URL}/api/media${encodeURI(file.relativePath)}`
-                : `${BACKEND_API_URL}/api/thumbnail?path=${encodeURIComponent(file.relativePath)}`
+                ? `${API_URL}/api/media${encodeURI(file.relativePath)}`
+                : `${API_URL}/api/thumbnail?path=${encodeURIComponent(file.relativePath)}`
             }
             alt={file.name}
             width={200}

@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import { Button, Slider, Badge } from '@repo/ui'
 import { useSettings } from '@/contexts/SettingsContext'
-import { BACKEND_API_URL } from '@/lib/config'
+import { API_URL } from '@/lib/config'
 
 interface VideoPlayerProps {
   src: string
@@ -56,7 +56,7 @@ export default function VideoPlayer({
       setIsLoadingTags(true)
       try {
         const response = await fetch(
-          `${BACKEND_API_URL}/api/ai-recommendations/classify-video`,
+          `${API_URL}/api/ai-recommendations/classify-video`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

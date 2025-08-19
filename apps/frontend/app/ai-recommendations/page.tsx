@@ -10,7 +10,7 @@ import {
   Badge,
   Progress,
 } from '@repo/ui'
-import { BACKEND_API_URL } from '@/lib/config'
+import { API_URL } from '@/lib/config'
 import {
   Brain,
   Search,
@@ -89,7 +89,7 @@ export default function AIRecommendationsPage() {
   const loadStats = async () => {
     try {
       const response = await fetch(
-        `${BACKEND_API_URL}/api/ai-recommendations/stats`
+        `${API_URL}/api/ai-recommendations/stats`
       )
       if (response.ok) {
         const data = await response.json()
@@ -116,7 +116,7 @@ export default function AIRecommendationsPage() {
       })
 
       const eventSource = new EventSource(
-        `${BACKEND_API_URL}/api/ai-recommendations/analyze?${params.toString()}`
+        `${API_URL}/api/ai-recommendations/analyze?${params.toString()}`
       )
 
       eventSource.onmessage = (event) => {
