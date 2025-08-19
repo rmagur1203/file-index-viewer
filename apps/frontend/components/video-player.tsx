@@ -11,11 +11,9 @@ import {
   SkipForward,
   Brain,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Slider } from '@/components/ui/slider'
+import { Button, Slider, Badge } from '@repo/ui'
 import { useSettings } from '@/contexts/SettingsContext'
 import { BACKEND_API_URL } from '@/lib/config'
-import { Badge } from './ui/badge'
 
 interface VideoPlayerProps {
   src: string

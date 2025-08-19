@@ -15,8 +15,7 @@ import {
   X,
   Brain,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Slider } from '@/components/ui/slider'
+import { Button, Slider } from '@repo/ui'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
 import 'react-pdf/dist/Page/TextLayer.css'
 

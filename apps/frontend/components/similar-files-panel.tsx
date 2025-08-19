@@ -10,27 +10,25 @@ import {
   VideoIcon,
   FileTextIcon,
 } from 'lucide-react'
-import { Slider } from '@/components/ui/slider'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Badge } from '@/components/ui/badge'
-import LazyImage from '@/components/lazy-image'
-import { BACKEND_API_URL } from '@/lib/config'
 import {
+  Slider,
+  Button,
+  Input,
+  ScrollArea,
+  Badge,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog'
+} from '@repo/ui'
+import LazyImage from '@/components/lazy-image'
+import { BACKEND_API_URL } from '@/lib/config'
 import { isImage, isVideo, isText, isPdf } from '@/lib/utils'
 
 interface SimilarFile {

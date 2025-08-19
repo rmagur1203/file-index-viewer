@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import {
+  Button,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+} from '@repo/ui'
 import VideoPlayer from './video-player'
 import ImageViewer from './image-viewer'
 import dynamic from 'next/dynamic'
@@ -15,7 +16,6 @@ import GalleryView from './gallery-view'
 import { FileItem } from '@/hooks/useFileBrowser'
 import { SimilarFilesPanel } from './similar-files-panel'
 import { BACKEND_API_URL } from '@/lib/config'
-import { Button } from '@/components/ui/button'
 import { Brain } from 'lucide-react'
 
 // 웹 검색 결과에 따른 SSR 안전 PDF 뷰어 로드

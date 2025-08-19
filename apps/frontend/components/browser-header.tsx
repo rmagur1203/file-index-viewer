@@ -10,9 +10,7 @@ import {
   Brain,
   Heart,
 } from 'lucide-react'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Toggle } from '@/components/ui/toggle'
+import { Input, Button, Toggle } from '@repo/ui'
 import { ThemeToggle } from './theme-toggle'
 import Link from 'next/link'
 

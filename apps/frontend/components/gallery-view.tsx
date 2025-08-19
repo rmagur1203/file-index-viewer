@@ -13,7 +13,7 @@ import LazyImage from '@/components/lazy-image'
 import type { FileItem } from '@/types'
 import { useSettings } from '@/contexts/SettingsContext'
 import { BACKEND_API_URL } from '@/lib/config'
-import { Button } from '@/components/ui/button'
+import { Button } from '@repo/ui'
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 

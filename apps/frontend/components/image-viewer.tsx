@@ -10,10 +10,9 @@ import {
   X,
   Brain,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button, Badge } from '@repo/ui'
 import Image from 'next/image'
 import { BACKEND_API_URL } from '@/lib/config'
-import { Badge } from './ui/badge'
 
 interface ImageViewerProps {
   src: string

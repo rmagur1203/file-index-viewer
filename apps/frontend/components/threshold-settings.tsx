@@ -1,13 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Label } from '@/components/ui/label'
-import { Slider } from '@/components/ui/slider'
-import { Switch } from '@/components/ui/switch'
-import { Separator } from '@/components/ui/separator'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Button,
+  Badge,
+  Label,
+  Slider,
+  Switch,
+  Separator,
+} from '@repo/ui'
 import { Settings, ChevronDown, ChevronUp, RotateCcw, Info } from 'lucide-react'
 import { SimilarityThresholds, ThresholdPreset } from '@/types'
 import {

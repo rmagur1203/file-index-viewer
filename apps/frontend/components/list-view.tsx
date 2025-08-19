@@ -15,7 +15,7 @@ import { useSettings } from '@/contexts/SettingsContext'
 import { BACKEND_API_URL } from '@/lib/config'
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { Button } from './ui/button'
+import { Button } from '@repo/ui'
 
 interface ListViewProps {
   files: FileItem[]
