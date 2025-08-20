@@ -2,7 +2,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { createHash } from "crypto";
 import { getVectorCache, AIEmbedding } from "./vector-cache";
-import { pipeline, env, Pipeline } from "@xenova/transformers";
+import { pipeline, env, Pipeline } from "@huggingface/transformers";
 import pdfParse from "pdf-parse";
 import { createWorker, OEM, PSM } from "tesseract.js";
 import { Canvas, createCanvas, Image, ImageData } from "canvas";

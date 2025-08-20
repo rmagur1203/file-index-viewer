@@ -211,17 +211,21 @@ async function getVideoInfo(
 
     // ffprobe로 duration 가져오기
     const durationCmd = `ffprobe -v quiet -show_entries format=duration -of csv=p=0 "${videoPath}"`;
+    console.log(`📊 Getting video duration...`);
     const durationOutput = execSync(durationCmd, {
       encoding: "utf8",
       timeout: 10000,
+      stdio: ["inherit", "pipe", "inherit"], // stdout만 파이프, 에러는 표시
     }).trim();
     const duration = parseFloat(durationOutput) || 0;
 
     // ffprobe로 해상도 가져오기
     const resolutionCmd = `ffprobe -v quiet -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "${videoPath}"`;
+    console.log(`📐 Getting video resolution...`);
     const resolutionOutput = execSync(resolutionCmd, {
       encoding: "utf8",
       timeout: 10000,
+      stdio: ["inherit", "pipe", "inherit"], // stdout만 파이프, 에러는 표시
     }).trim();
     const [width, height] = resolutionOutput
       .split(",")
@@ -254,14 +258,15 @@ async function extractBatchFrames(
     // 출력 파일 패턴
     const outputPattern = path.join(outputDir, "batch_%03d.png");
 
-    // FFmpeg 배치 명령어
-    const cmd = `ffmpeg -i "${videoPath}" -vf "${selectFilter}" -vsync 0 -q:v 2 "${outputPattern}" -y`;
+    // FFmpeg 배치 명령어 (진행도 옵션 추가)
+    const cmd = `ffmpeg -i "${videoPath}" -vf "${selectFilter}" -vsync 0 -q:v 2 -stats_period 1 "${outputPattern}" -y`;
 
     console.log(`🎬 Batch extracting frames with select filter...`);
+    console.log(`📟 Command: ${cmd}`);
     execSync(cmd, {
       encoding: "utf8",
       timeout: 180000, // 3분 timeout (배치이므로 더 길게)
-      stdio: "pipe",
+      stdio: ["inherit", "inherit", "inherit"], // 진행도 표시
     });
 
     // 생성된 파일들을 timestamp와 매핑
@@ -311,11 +316,12 @@ async function extractFrame(
     const { execSync } = require("child_process");
 
     // FFmpeg로 특정 시간에서 프레임 추출 (빠른 seek 옵션 추가)
-    const cmd = `ffmpeg -ss ${timestamp} -i "${videoPath}" -vframes 1 -f image2 -update 1 -q:v 2 "${outputPath}" -y`;
+    const cmd = `ffmpeg -ss ${timestamp} -i "${videoPath}" -vframes 1 -f image2 -update 1 -q:v 2 -stats_period 1 "${outputPath}" -y`;
+    console.log(`📟 Individual frame extraction: ${timestamp}s`);
     execSync(cmd, {
       encoding: "utf8",
       timeout: 120000, // 30초 → 120초(2분)로 증가
-      stdio: "pipe", // 출력을 숨김
+      stdio: ["inherit", "inherit", "inherit"], // 진행도 표시
     });
 
     // 파일이 생성되었는지 확인

@@ -14,7 +14,7 @@ module.exports = {
       autorestart: true,
       max_restarts: 5,
       min_uptime: '10s',
-      max_memory_restart: '1G',
+      max_memory_restart: '4G',
       kill_timeout: 5000,
       env: {
         NODE_ENV: 'development',

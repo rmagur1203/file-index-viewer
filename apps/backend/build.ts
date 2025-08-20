@@ -13,7 +13,7 @@ await Bun.build({
     "pdf-parse",
     "tesseract.js",
     "@tensorflow/tfjs-node",
-    "@xenova/transformers",
+    "@huggingface/transformers",
     "ffmpeg-static",
   ],
   minify: true,
