@@ -185,7 +185,6 @@ export async function scanMediaFiles(
               stats.size,
               modifiedAt
             );
-            console.log(`🔍 isChanged: ${isChanged}`);
 
             let file: DuplicateFile;
 

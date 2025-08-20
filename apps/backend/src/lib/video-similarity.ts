@@ -111,24 +111,63 @@ export async function extractVideoFingerprint(
       `🎯 Will extract ${timestamps.length} frames at: [${timestamps.join(", ")}]s`
     );
 
-    // 프레임 추출
+    // 프레임 추출 (배치 처리)
+    console.log(`🚀 Extracting ${timestamps.length} frames in batch mode...`);
     const frames: VideoFrame[] = [];
-    for (let i = 0; i < timestamps.length; i++) {
-      const timestamp = timestamps[i];
-      const framePath = path.join(frameDir, `frame-${i}.png`);
 
-      try {
-        await extractFrame(videoPath, timestamp, framePath);
-        const hash = await calculateImageHash(framePath);
-        frames.push({ timestamp, hash });
-        console.log(
-          `✅ Frame ${i} (${timestamp}s): ${hash.substring(0, 8)}...`
-        );
-      } catch (error) {
-        console.warn(
-          `❌ Failed to extract frame at ${timestamp}s from ${videoPath}:`,
-          error instanceof Error ? error.message : error
-        );
+    try {
+      // 한번에 모든 프레임 추출
+      const extractedFrames = await extractBatchFrames(
+        videoPath,
+        timestamps,
+        frameDir
+      );
+
+      // 각 프레임의 해시 계산
+      for (let i = 0; i < extractedFrames.length; i++) {
+        const frameData = extractedFrames[i];
+        if (!frameData) continue;
+
+        const { timestamp, framePath } = frameData;
+        try {
+          const hash = await calculateImageHash(framePath);
+          frames.push({ timestamp, hash });
+          console.log(
+            `✅ Frame ${i} (${timestamp}s): ${hash.substring(0, 8)}...`
+          );
+        } catch (error) {
+          console.warn(
+            `❌ Failed to calculate hash for frame at ${timestamp}s:`,
+            error instanceof Error ? error.message : error
+          );
+        }
+      }
+    } catch (error) {
+      console.warn(
+        `❌ Batch frame extraction failed, falling back to individual extraction:`,
+        error instanceof Error ? error.message : error
+      );
+
+      // fallback: 개별 추출
+      for (let i = 0; i < timestamps.length; i++) {
+        const timestamp = timestamps[i];
+        if (timestamp === undefined) continue;
+
+        const framePath = path.join(frameDir, `frame-${i}.png`);
+
+        try {
+          await extractFrame(videoPath, timestamp, framePath);
+          const hash = await calculateImageHash(framePath);
+          frames.push({ timestamp, hash });
+          console.log(
+            `✅ Frame ${i} (${timestamp}s): ${hash.substring(0, 8)}...`
+          );
+        } catch (error) {
+          console.warn(
+            `❌ Failed to extract frame at ${timestamp}s from ${videoPath}:`,
+            error instanceof Error ? error.message : error
+          );
+        }
       }
     }
 
@@ -198,7 +237,70 @@ async function getVideoInfo(
 }
 
 /**
- * 특정 시간에서 프레임을 추출합니다 (더 안정적인 방식)
+ * 배치로 여러 프레임을 한번에 추출합니다 (효율적인 방식)
+ */
+async function extractBatchFrames(
+  videoPath: string,
+  timestamps: number[],
+  outputDir: string
+): Promise<Array<{ timestamp: number; framePath: string }>> {
+  try {
+    const { execSync } = require("child_process");
+
+    // select 필터 구성: eq(t,0)+eq(t,5)+eq(t,10)...
+    const selectExpressions = timestamps.map((t) => `eq(t,${t})`).join("+");
+    const selectFilter = `select='${selectExpressions}'`;
+
+    // 출력 파일 패턴
+    const outputPattern = path.join(outputDir, "batch_%03d.png");
+
+    // FFmpeg 배치 명령어
+    const cmd = `ffmpeg -i "${videoPath}" -vf "${selectFilter}" -vsync 0 -q:v 2 "${outputPattern}" -y`;
+
+    console.log(`🎬 Batch extracting frames with select filter...`);
+    execSync(cmd, {
+      encoding: "utf8",
+      timeout: 180000, // 3분 timeout (배치이므로 더 길게)
+      stdio: "pipe",
+    });
+
+    // 생성된 파일들을 timestamp와 매핑
+    const result: Array<{ timestamp: number; framePath: string }> = [];
+
+    for (let i = 0; i < timestamps.length; i++) {
+      const timestamp = timestamps[i];
+      if (timestamp === undefined) continue;
+
+      const frameNumber = String(i + 1).padStart(3, "0"); // 001, 002, 003...
+      const framePath = path.join(outputDir, `batch_${frameNumber}.png`);
+
+      if (require("fs").existsSync(framePath)) {
+        result.push({
+          timestamp: timestamp,
+          framePath: framePath,
+        });
+      } else {
+        console.warn(
+          `⚠️ Frame file not found: ${framePath} for timestamp ${timestamp}s`
+        );
+      }
+    }
+
+    console.log(
+      `✅ Batch extracted ${result.length}/${timestamps.length} frames successfully`
+    );
+    return result;
+  } catch (error) {
+    console.error(
+      `❌ Batch frame extraction failed:`,
+      error instanceof Error ? error.message : error
+    );
+    throw error;
+  }
+}
+
+/**
+ * 특정 시간에서 프레임을 추출합니다 (개별 방식 - fallback용)
  */
 async function extractFrame(
   videoPath: string,
@@ -208,11 +310,11 @@ async function extractFrame(
   try {
     const { execSync } = require("child_process");
 
-    // FFmpeg로 특정 시간에서 프레임 추출
-    const cmd = `ffmpeg -i "${videoPath}" -ss ${timestamp} -vframes 1 -f image2 -update 1 "${outputPath}" -y`;
+    // FFmpeg로 특정 시간에서 프레임 추출 (빠른 seek 옵션 추가)
+    const cmd = `ffmpeg -ss ${timestamp} -i "${videoPath}" -vframes 1 -f image2 -update 1 -q:v 2 "${outputPath}" -y`;
     execSync(cmd, {
       encoding: "utf8",
-      timeout: 30000,
+      timeout: 120000, // 30초 → 120초(2분)로 증가
       stdio: "pipe", // 출력을 숨김
     });
 
@@ -251,7 +353,8 @@ async function calculateImageHash(imagePath: string): Promise<string> {
     // 각 픽셀이 평균보다 큰지 여부로 해시 생성
     let hash = "";
     for (let i = 0; i < data.length; i++) {
-      hash += data[i] > avg ? "1" : "0";
+      const pixel = data[i];
+      hash += pixel !== undefined && pixel > avg ? "1" : "0";
     }
 
     return hash;
@@ -403,11 +506,14 @@ function compareFrameSequences(
   let validComparisons = 0;
 
   for (let i = 0; i < shortFrames.length; i++) {
+    const shortFrame = shortFrames[i];
     const longIndex = offset + i;
-    if (longIndex < longFrames.length) {
+    const longFrame = longFrames[longIndex];
+
+    if (shortFrame && longFrame && longIndex < longFrames.length) {
       const similarity = calculateHashSimilarity(
-        shortFrames[i].hash,
-        longFrames[longIndex].hash
+        shortFrame.hash,
+        longFrame.hash
       );
       totalSimilarity += similarity;
       validComparisons++;
