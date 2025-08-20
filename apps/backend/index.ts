@@ -66,5 +66,6 @@ console.log(`🎬 Media API: http://localhost:${port}/api/media`);
 
 export default {
   port,
+  idleTimeout: 0,
   fetch: app.fetch,
 };
