@@ -3,6 +3,7 @@ import { getImageAnalyzer } from "../lib/ai-image-analyzer";
 import { getVideoAnalyzer } from "../lib/ai-video-analyzer";
 import { getTextAnalyzer } from "../lib/ai-text-analyzer";
 import { getVectorCache } from "../lib/vector-cache";
+import { getLikeCache } from "../lib/like-cache";
 import { isImage, isVideo, isText } from "../lib/utils";
 import { promises as fs } from "fs";
 import { scanMediaFiles } from "../lib/duplicate-detector";
@@ -174,11 +175,27 @@ async function handleImageRecommendations(
     const similarFiles = await vectorCache.findSimilar(
       queryEmbedding,
       searchFileType,
-      limit,
+      limit * 2, // 좋아요한 파일 제외를 위해 더 많이 가져옴
       threshold
     );
 
-    const recommendations = similarFiles.map((result) => ({
+    // 좋아요한 파일들 가져오기
+    const likeCache = await getLikeCache();
+    const likedFiles = await likeCache.getAllLikes();
+    const likedFilesSet = new Set(likedFiles);
+
+    // 좋아요한 파일들과 쿼리 파일 자체 제외
+    const filteredFiles = similarFiles
+      .filter((result) => {
+        const relativePath = result.file.filePath.replace(mediaRoot, "");
+        const queryRelativePath = filePath.replace(mediaRoot, "");
+        return (
+          !likedFilesSet.has(relativePath) && relativePath !== queryRelativePath
+        );
+      })
+      .slice(0, limit); // 원하는 개수만큼만 선택
+
+    const recommendations = filteredFiles.map((result) => ({
       file: {
         filePath: result.file.filePath.replace(mediaRoot, ""), // 상대 경로로 변환
         type: result.file.fileType,
@@ -249,11 +266,29 @@ async function handleVideoRecommendations(
     const similarFiles = await vectorCache.findSimilar(
       queryEmbedding,
       searchFileType,
-      limit,
+      limit * 2, // 좋아요한 파일 제외를 위해 더 많이 가져옴
       threshold
     );
 
-    console.log(`✅ Found ${similarFiles.length} similar ${searchFileType}s`);
+    // 좋아요한 파일들 가져오기
+    const likeCache = await getLikeCache();
+    const likedFiles = await likeCache.getAllLikes();
+    const likedFilesSet = new Set(likedFiles);
+
+    // 좋아요한 파일들과 쿼리 파일 자체 제외
+    const filteredFiles = similarFiles
+      .filter((result) => {
+        const relativePath = result.file.filePath.replace(mediaRoot, "");
+        const queryRelativePath = filePath.replace(mediaRoot, "");
+        return (
+          !likedFilesSet.has(relativePath) && relativePath !== queryRelativePath
+        );
+      })
+      .slice(0, limit); // 원하는 개수만큼만 선택
+
+    console.log(
+      `✅ Found ${filteredFiles.length} similar ${searchFileType}s (after excluding liked files)`
+    );
 
     return new Response(
       JSON.stringify({
@@ -264,7 +299,7 @@ async function handleVideoRecommendations(
           limit,
           threshold,
         },
-        recommendations: similarFiles.map((result) => ({
+        recommendations: filteredFiles.map((result) => ({
           file: {
             filePath: result.file.filePath.replace(mediaRoot, ""), // 상대 경로로 변환
             name: result.file.filePath.split("/").pop(),
@@ -281,7 +316,7 @@ async function handleVideoRecommendations(
             processingTime: (result.file.metadata as any)?.processingTime || 0,
           },
         })),
-        total: similarFiles.length,
+        total: filteredFiles.length,
         processingInfo: {
           analyzer: "video_mobilenet_v2",
           method: "keyframe_feature_extraction",
@@ -336,11 +371,29 @@ async function handleTextRecommendations(
     // 유사한 텍스트 검색
     const similarTexts = await textAnalyzer.findSimilarTexts(
       filePath,
-      limit,
+      limit * 2, // 좋아요한 파일 제외를 위해 더 많이 가져옴
       threshold
     );
 
-    console.log(`✅ Found ${similarTexts.length} similar texts`);
+    // 좋아요한 파일들 가져오기
+    const likeCache = await getLikeCache();
+    const likedFiles = await likeCache.getAllLikes();
+    const likedFilesSet = new Set(likedFiles);
+
+    // 좋아요한 파일들과 쿼리 파일 자체 제외
+    const filteredTexts = similarTexts
+      .filter((result) => {
+        const relativePath = result.file.filePath.replace(mediaRoot, "");
+        const queryRelativePath = filePath.replace(mediaRoot, "");
+        return (
+          !likedFilesSet.has(relativePath) && relativePath !== queryRelativePath
+        );
+      })
+      .slice(0, limit); // 원하는 개수만큼만 선택
+
+    console.log(
+      `✅ Found ${filteredTexts.length} similar texts (after excluding liked files)`
+    );
 
     return new Response(
       JSON.stringify({
@@ -351,7 +404,7 @@ async function handleTextRecommendations(
           limit,
           threshold,
         },
-        recommendations: similarTexts.map((result) => ({
+        recommendations: filteredTexts.map((result) => ({
           file: {
             filePath: result.file.filePath.replace(mediaRoot, ""), // 상대 경로로 변환
             name: result.file.filePath.split("/").pop(),
@@ -371,7 +424,7 @@ async function handleTextRecommendations(
             processingTime: (result.file.metadata as any)?.processingTime || 0,
           },
         })),
-        total: similarTexts.length,
+        total: filteredTexts.length,
         processingInfo: {
           analyzer: textAnalyzer.getModelInfo().name,
           method: textAnalyzer.getModelInfo().useLocalModel

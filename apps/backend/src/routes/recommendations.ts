@@ -20,6 +20,17 @@ recommendations.get("/", async (c) => {
       fileTypes: fileTypes as ("image" | "video" | "text")[],
     });
 
+    // 좋아요 기반 추천이 없을 때 일반 추천 제공
+    if (recommendations.length === 0) {
+      const generalRecommendations =
+        await engine.generateGeneralRecommendations({
+          limit,
+          minSimilarity,
+          fileTypes: fileTypes as ("image" | "video" | "text")[],
+        });
+      return c.json(generalRecommendations);
+    }
+
     return c.json(recommendations);
   } catch (error) {
     console.error("Error generating recommendations:", error);

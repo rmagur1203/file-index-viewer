@@ -49,6 +49,7 @@ export class RecommendationEngine {
 
     // 1. 좋아요한 파일 목록 가져오기
     const likedFiles = await this.likeCache.getAllLikes();
+
     if (likedFiles.length === 0) {
       return [];
     }
@@ -72,7 +73,7 @@ export class RecommendationEngine {
     // 4. 유사한 파일들 검색
     const candidates = await this.findSimilarFiles(
       preferenceVector,
-      likedFiles,
+      absolutePaths, // 절대 경로로 수정
       fileTypes,
       limit * 3 // 다양성을 위해 더 많이 가져온 후 필터링
     );
@@ -87,6 +88,76 @@ export class RecommendationEngine {
     );
 
     return recommendations;
+  }
+
+  /**
+   * 일반 추천 생성 (좋아요가 없을 때)
+   * 최신 파일들 중에서 품질이 좋은 파일들을 추천
+   */
+  async generateGeneralRecommendations(
+    options: RecommendationOptions = {}
+  ): Promise<RecommendationResult[]> {
+    const {
+      limit = 20,
+      minSimilarity = 0.3,
+      fileTypes = ["image", "video"],
+    } = options;
+
+    try {
+      // 좋아요한 파일들 가져오기 (제외하기 위해)
+      const likedFiles = await this.likeCache.getAllLikes();
+      const likedFilesSet = new Set(
+        likedFiles.map((filePath) => safePath(VIDEO_ROOT, filePath))
+      );
+
+      const recommendations: RecommendationResult[] = [];
+
+      for (const fileType of fileTypes) {
+        // 각 파일 타입별로 랜덤 샘플링으로 일반 추천 생성
+        const embeddings = await this.vectorCache.getRandomEmbeddings(
+          fileType as "image" | "video" | "text",
+          Math.ceil(limit / fileTypes.length) * 2 // 필터링을 위해 더 많이 가져옴
+        );
+
+        // 좋아요한 파일들 제외
+        const filteredEmbeddings = embeddings.filter(
+          (embedding) => !likedFilesSet.has(embedding.filePath)
+        );
+
+        // 추천 결과 생성
+        const typeRecommendations = filteredEmbeddings
+          .slice(0, Math.ceil(limit / fileTypes.length))
+          .map((embedding) => {
+            // 파일 경로를 상대 경로로 변환
+            let relativePath = embedding.filePath;
+            if (relativePath.startsWith(VIDEO_ROOT)) {
+              relativePath = relativePath.substring(VIDEO_ROOT.length);
+              if (!relativePath.startsWith("/")) {
+                relativePath = "/" + relativePath;
+              }
+            }
+
+            const relativeFile: AIEmbedding = {
+              ...embedding,
+              filePath: relativePath,
+            };
+
+            return {
+              file: relativeFile,
+              score: Math.random() * 0.3 + 0.7, // 0.7-1.0 사이의 랜덤 점수
+              reason: "새로운 콘텐츠를 발견해보세요",
+            };
+          });
+
+        recommendations.push(...typeRecommendations);
+      }
+
+      // 점수순으로 정렬하여 반환
+      return recommendations.sort((a, b) => b.score - a.score).slice(0, limit);
+    } catch (error) {
+      console.error("Error generating general recommendations:", error);
+      return [];
+    }
   }
 
   /**
@@ -152,7 +223,7 @@ export class RecommendationEngine {
    */
   private async findSimilarFiles(
     preferenceVector: number[],
-    likedFiles: string[],
+    likedFilePaths: string[],
     fileTypes: string[],
     limit: number
   ): Promise<SimilarityResult[]> {
@@ -170,8 +241,9 @@ export class RecommendationEngine {
 
         // 이미 좋아요한 파일들 제외
         const filteredFiles = similarFiles.filter(
-          (result: SimilarityResult) =>
-            !likedFiles.includes(result.file.filePath)
+          (result: SimilarityResult) => {
+            return !likedFilePaths.includes(result.file.filePath);
+          }
         );
 
         results.push(...filteredFiles);

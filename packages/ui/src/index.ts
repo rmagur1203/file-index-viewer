@@ -8,6 +8,7 @@ export {
   CardDescription,
   CardContent,
 } from "./card";
+export { Checkbox } from "./checkbox";
 export {
   Dialog,
   DialogPortal,

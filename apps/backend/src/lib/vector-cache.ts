@@ -743,6 +743,35 @@ export class VectorCache {
   }
 
   /**
+   * 랜덤 임베딩 가져오기 (일반 추천용)
+   */
+  async getRandomEmbeddings(
+    fileType: "image" | "video" | "text",
+    limit: number = 10
+  ): Promise<AIEmbedding[]> {
+    if (!this.db) {
+      throw new Error("Database not initialized");
+    }
+
+    try {
+      const query = `
+        SELECT id, file_path, file_type, model_name, 
+               embedding_json, extracted_at, metadata_json
+        FROM ai_embeddings 
+        WHERE file_type = ?
+        ORDER BY RANDOM()
+        LIMIT ?
+      `;
+
+      const rows = this.db.prepare(query).all(fileType, limit) as any[];
+      return rows.map((row) => this.rowToEmbedding(row));
+    } catch (error) {
+      console.error("Error getting random embeddings:", error);
+      return [];
+    }
+  }
+
+  /**
    * 데이터베이스 연결 종료
    */
   async close(): Promise<void> {
